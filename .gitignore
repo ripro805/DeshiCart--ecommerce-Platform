@@ -1,0 +1,93 @@
+﻿# ─── Python / Django ──────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual env (top-level only)
+/.venv/
+/venv/
+/env/
+
+# Django
+*.sqlite3
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+local_settings.py
+
+# ─── Frontend / Node ─────────────────────────
+/frontend/node_modules/
+/frontend/.next/
+/frontend/out/
+/frontend/dist/
+/frontend/build/
+/frontend/coverage/
+/frontend/.npm/
+/frontend/.eslintcache
+/frontend/package-lock.json
+
+# Logs (broad)
+/*.log
+/frontend/*.log
+/_*.log
+/_*.err
+/_smoke_out.txt
+/_redist.log
+
+# Scratch / dev artifacts (underscore-prefixed)
+/_*.py
+/_*.txt
+/_*.log
+/_*.err
+/_e
+/_o
+/redist_failures.txt
+/reimage_failures.txt
+/reimage_pid.txt
+/reimage_pool.json
+/reimage_pool_progress.json
+/reimage_progress.json
+/reimage_run.log
+/reimage_run.log.err
+/reimage_products.py
+/reimage_products_v2_old.py
+/apply_migration.py
+/seed_large_products.py
+/npm_install.log
+/package-lock.json
+/.dist/
+/.puku/
+/.bak/
+
+# Frontend stray helpers
+/frontend/kill-port-3000.ps1
+/frontend/_next.log
+/frontend/_next.log.snapshot
+/frontend/page.b64
+
+# Operational log (move out of repo later if desired)
+/TODO.md
+
+/_*.ps1
+/_*.bat
+/_kickoff_reimage.ps1
+/_launch_reimage.bat
+/_launch_reimage_v3.bat
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env / secrets
+.env
+.env.local
+.env.*.local

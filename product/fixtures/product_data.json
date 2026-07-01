@@ -1,0 +1,16 @@
+[
+  {
+    "model": "product.product",
+    "pk": 3,
+    "fields": {
+      "name": "Sample Product 3",
+      "description": "This is a sample product for cart fixture.",
+      "price": 300.00,
+      "stock": 10,
+      "image": "",
+      "category": 1,
+      "created_at": "2026-02-24T10:00:00Z",
+      "updated_at": "2026-02-24T10:00:00Z"
+    }
+  }
+]
