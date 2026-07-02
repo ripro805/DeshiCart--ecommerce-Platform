@@ -6,6 +6,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
 import { getErrorMessage } from "@/lib/utils";
@@ -14,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -25,8 +26,9 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success("Welcome back!");
-      // Pull role from the freshly updated auth store via the hook's `user` (re-read below if stale)
-      const current = user;
+      // Read the freshly-updated user from the store (the closure-scoped `user` from useAuth
+      // is captured at render time and would be stale).
+      const current = useAuthStore.getState().user;
       const role = (current?.is_superuser ? "SUPER_ADMIN" : current?.is_staff ? "STAFF_ADMIN" : "CUSTOMER") as "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN";
       if (role !== "CUSTOMER") {
         const nextAdmin = typeof next === "string" && next.startsWith("/admin") ? next : "/admin/dashboard";
