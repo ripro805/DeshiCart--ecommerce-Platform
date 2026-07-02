@@ -1,6 +1,8 @@
 // Centralized TypeScript types matching Django backend serializers.
 // Keep these aligned with backend responses.
 
+export type UserRole = "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN";
+
 export interface User {
   id: number;
   email: string;
@@ -9,7 +11,31 @@ export interface User {
   phone?: string;
   address?: string;
   is_staff?: boolean;
+  is_superuser?: boolean;
+  is_active?: boolean;
+  is_blocked?: boolean;
   avatar?: string | null;
+  date_joined?: string;
+  last_login?: string | null;
+  // Computed from is_staff/is_superuser on backend (read-only property).
+  role?: UserRole;
+}
+
+export function roleOf(u: User | null | undefined): UserRole {
+  if (!u) return "CUSTOMER";
+  if (u.is_superuser) return "SUPER_ADMIN";
+  if (u.is_staff) return "STAFF_ADMIN";
+  return "CUSTOMER";
+}
+
+export function isAdmin(u: User | null | undefined): boolean {
+  if (!u) return false;
+  return Boolean(u.is_staff) || Boolean(u.is_superuser);
+}
+
+export function isSuperAdmin(u: User | null | undefined): boolean {
+  if (!u) return false;
+  return Boolean(u.is_superuser);
 }
 
 export interface AuthTokens {

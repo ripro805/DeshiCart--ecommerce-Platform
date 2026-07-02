@@ -14,7 +14,7 @@ export default function AccountPage() {
       <Card className="p-8">
         <div className="flex items-center gap-5">
           <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-primary to-accent text-2xl font-bold text-white shadow-glow">
-            {getInitials(user.first_name, user.last_name, user.email)}
+            {getInitials(user.first_name, user.last_name)}
           </div>
           <div>
             <h2 className="text-xl font-semibold">{user.first_name || user.email}</h2>

@@ -33,8 +33,15 @@ export const useCartStore = create<CartState>()(
       async fetch() {
         set({ isLoading: true });
         try {
-          const { data } = await api.get<Cart>("/carts/");
-          const cart = Array.isArray(data) ? data[0] ?? null : (data.results?.[0] ?? null);
+          const { data } = await api.get<Cart | Cart[] | { results?: Cart[] }>("/carts/");
+          let cart: Cart | null = null;
+          if (Array.isArray(data)) {
+            cart = data[0] ?? null;
+          } else if (data && Array.isArray((data as { results?: Cart[] }).results)) {
+            cart = ((data as { results?: Cart[] }).results as Cart[])[0] ?? null;
+          } else {
+            cart = (data as Cart) ?? null;
+          }
           set({ cart });
           return cart;
         } catch {

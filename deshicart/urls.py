@@ -26,8 +26,8 @@ urlpatterns = [
     path('', api_root_view, name='api-root'),
     # path('api-auth/', include('rest_framework.urls')),  # Enables DRF session login/logout/profile
     path('api/', include('api.urls')),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
+    path('api/auth/', include('djoser.urls')),
+    path('api/auth/', include('djoser.urls.jwt')),
 ]
 
 if settings.DEBUG:

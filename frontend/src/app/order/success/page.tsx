@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 export default function OrderSuccessPage() {
   return (
     <Container className="py-24 text-center">
-      <motion />
       <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white shadow-glow">
         <CheckCircle2 className="h-10 w-10" />
       </div>

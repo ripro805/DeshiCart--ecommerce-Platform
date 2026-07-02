@@ -14,7 +14,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") || "/";
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -25,10 +25,20 @@ export default function LoginPage() {
     try {
       await login(email, password);
       toast.success("Welcome back!");
-      router.push(next);
-      router.refresh();
+      // Pull role from the freshly updated auth store via the hook's `user` (re-read below if stale)
+      const current = user;
+      const role = (current?.is_superuser ? "SUPER_ADMIN" : current?.is_staff ? "STAFF_ADMIN" : "CUSTOMER") as "CUSTOMER" | "STAFF_ADMIN" | "SUPER_ADMIN";
+      if (role !== "CUSTOMER") {
+        const nextAdmin = typeof next === "string" && next.startsWith("/admin") ? next : "/admin/dashboard";
+        router.push(nextAdmin);
+      } else {
+        router.push(typeof next === "string" && next ? next : "/account");
+      }
     } catch (err) {
-      toast.error(getErrorMessage(err));
+      const msg =
+        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
+        "Invalid email or password";
+      toast.error(msg);
     } finally {
       setSubmitting(false);
     }

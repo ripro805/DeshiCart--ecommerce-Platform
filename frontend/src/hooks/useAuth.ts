@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
 import api from "@/lib/api";
-import type { AuthTokens, User } from "@/types";
+import { isAdmin, isSuperAdmin, roleOf, type AuthTokens, type User, type UserRole } from "@/types";
 
 export function useAuth() {
   const store = useAuthStore();
@@ -66,9 +66,16 @@ export function useAuth() {
     return data;
   }
 
+  const user = store.user;
+  const role: UserRole = roleOf(user);
   return {
     ...store,
+    user,
+    role,
     isAuthenticated: !!store.accessToken,
+    isAdmin: isAdmin(user),
+    isSuperAdmin: isSuperAdmin(user),
+    isBlocked: !!user?.is_blocked,
     login,
     register,
     activate,

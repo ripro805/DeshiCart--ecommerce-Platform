@@ -21,23 +21,6 @@ export default function CartPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  const onRemove = async (itemId: number) => {
-    try {
-      await cart.removeItem(itemId);
-      toast.success("Removed");
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  };
-
-  const onUpdate = async (itemId: number, qty: number) => {
-    try {
-      await cart.updateItem(itemId, qty);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    }
-  };
-
   if (!isAuthenticated) {
     return (
       <Container className="py-20 text-center">
@@ -74,12 +57,7 @@ export default function CartPage() {
         <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-3">
             {cart.cart.items.map((item) => (
-              <CartItemRow
-                key={item.id}
-                item={item}
-                onRemove={() => onRemove(item.id)}
-                onChange={(qty) => onUpdate(item.id, qty)}
-              />
+              <CartItemRow key={item.id} item={item} />
             ))}
           </div>
           <div className="lg:sticky lg:top-24 lg:self-start">

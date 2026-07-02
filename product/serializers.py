@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Avg
-from .models import Product, Category, Review
+from .models import Product, Category, SubCategory, Brand, Attribute, Tag, Review, StockLog
 from decimal import Decimal
 
 
@@ -131,3 +131,129 @@ class ReviewSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         product_id = self.context['product_id']
         return Review.objects.create(product_id=product_id, **validated_data)
+
+
+class SubCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubCategory
+        fields = ("id", "category", "name", "slug", "order")
+
+
+class BrandSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Brand
+        fields = ("id", "name", "slug", "logo", "logo_url", "description", "is_active", "created_at", "updated_at")
+        read_only_fields = ("created_at", "updated_at")
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ("id", "name", "slug", "color")
+
+
+class AttributeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attribute
+        fields = ("id", "name", "slug", "values")
+
+
+class StockLogSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    created_by_email = serializers.CharField(source="created_by.email", read_only=True)
+
+    class Meta:
+        model = StockLog
+        fields = (
+            "id",
+            "product",
+            "product_name",
+            "change",
+            "reason",
+            "note",
+            "created_by",
+            "created_by_email",
+            "created_at",
+        )
+        read_only_fields = ("created_by", "created_at")
+
+
+class AdminProductSerializer(serializers.ModelSerializer):
+    """Full product representation for the admin panel."""
+
+    image_url = serializers.SerializerMethodField()
+    subcategory = SubCategorySerializer(read_only=True)
+    brand_ref = BrandSerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    average_rating = serializers.SerializerMethodField()
+    review_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "sku",
+            "brand",
+            "brand_ref",
+            "category",
+            "subcategory",
+            "short_description",
+            "description",
+            "price",
+            "cost_price",
+            "discounted_price",
+            "stock",
+            "low_stock_threshold",
+            "is_active",
+            "is_featured",
+            "image",
+            "image_external_url",
+            "image_url",
+            "gallery",
+            "specifications",
+            "tags",
+            "average_rating",
+            "review_count",
+            "rating",
+            "total_reviews",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("created_at", "updated_at")
+
+    def get_image_url(self, product):
+        if product.image_external_url:
+            return product.image_external_url
+        if not product.image:
+            return None
+        request = self.context.get("request")
+        url = product.image.url
+        return request.build_absolute_uri(url) if request else url
+
+    def get_average_rating(self, product):
+        agg = product.review_set.aggregate(avg=Avg("ratings"))
+        return float(round(agg.get("avg") or 0, 2))
+
+    def get_review_count(self, product):
+        return product.review_set.count()
+
+
+class AdminReviewSerializer(serializers.ModelSerializer):
+    user_email = serializers.CharField(source="user.email", read_only=True)
+    product_name = serializers.CharField(source="product.name", read_only=True)
+
+    class Meta:
+        model = Review
+        fields = (
+            "id",
+            "user",
+            "user_email",
+            "product",
+            "product_name",
+            "ratings",
+            "comment",
+            "status",
+            "created_at",
+        )

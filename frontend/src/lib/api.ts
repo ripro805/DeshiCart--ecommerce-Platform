@@ -67,4 +67,51 @@ api.interceptors.response.use(
   }
 );
 
+// Unwrap backend envelope { success, data, meta, error } -> data.
+// Pass through paginated DRF { count, next, previous, results } unchanged.
+export function unwrap<T = unknown>(raw: any): T {
+  if (raw == null) return raw as T;
+  if (typeof raw === "object" && "success" in raw && "data" in raw) {
+    return (raw.data ?? null) as T;
+  }
+  return raw as T;
+}
+
+export interface Paginated<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
+export function isPaginated<T = unknown>(raw: any): raw is Paginated<T> {
+  return raw && typeof raw === "object" && "results" in raw && Array.isArray(raw.results);
+}
+
+// Convenience helpers that auto-unwrap backend envelope responses.
+async function _call<T = unknown>(p: Promise<{ data: any }>): Promise<T> {
+  const res = await p;
+  return unwrap<T>(res.data);
+}
+
+export function apiGet<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  return _call<T>(api.get(url, config));
+}
+
+export function apiPost<T = unknown>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  return _call<T>(api.post(url, body, config));
+}
+
+export function apiPatch<T = unknown>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  return _call<T>(api.patch(url, body, config));
+}
+
+export function apiPut<T = unknown>(url: string, body?: unknown, config?: AxiosRequestConfig): Promise<T> {
+  return _call<T>(api.put(url, body, config));
+}
+
+export function apiDelete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  return _call<T>(api.delete(url, config));
+}
+
 export default api;

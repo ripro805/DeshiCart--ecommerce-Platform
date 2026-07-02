@@ -1,28 +1,21 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User
+from .models import User, Address
 
-# Register your models here.
 
+@admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    model = User
-    list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_active')
-    list_filter = ('is_staff', 'is_active')
-    fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'address', 'phone_number')}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser', 'groups', 'user_permissions')}),
-        ('Important dates', {'fields': ('last_login','date_joined')}),
-        
+    list_display = ("email", "is_staff", "is_superuser", "is_blocked", "is_active", "date_joined")
+    list_filter = ("is_staff", "is_superuser", "is_active", "is_blocked")
+    search_fields = ("email", "first_name", "last_name", "phone_number", "phone")
+    ordering = ("-date_joined",)
+    fieldsets = UserAdmin.fieldsets + (
+        ("Profile", {"fields": ("phone_number", "phone", "address", "avatar", "date_of_birth", "last_seen_at", "is_blocked")}),
     )
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2','is_staff', 'is_active')}
-    
-    ),
-    )
-    search_fields = ('email',)
-    ordering = ('email',)
-    
-admin.site.register(User, CustomUserAdmin)
+
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ("user", "line1", "city", "country", "is_default_billing", "is_default_shipping")
+    list_filter = ("country", "is_default_billing", "is_default_shipping")
+    search_fields = ("user__email", "line1", "city", "postal_code")
