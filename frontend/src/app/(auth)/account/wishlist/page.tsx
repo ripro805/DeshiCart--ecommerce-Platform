@@ -12,7 +12,7 @@ export default function WishlistPage() {
   async function load() {
     setLoading(true);
     try {
-      const res: any = await apiGet("/api/wishlist/");
+      const res: any = await apiGet("/wishlist/");
       const list = Array.isArray(res) ? res : res?.results || [];
       setItems(list);
     } catch { setItems([]); }
@@ -22,12 +22,12 @@ export default function WishlistPage() {
   useEffect(() => { load(); }, []);
 
   async function remove(productId: number) {
-    await apiDelete(`/api/wishlist/${productId}/`);
+    await apiDelete(`/wishlist/${productId}/`);
     await load();
   }
 
   async function addToCart(item: any) {
-    await apiPost("/api/cart/items/", { product_id: item.product?.id || item.product_id, quantity: 1 });
+    await apiPost("/cart/items/", { product_id: item.product?.id || item.product_id, quantity: 1 });
     alert("Added to cart");
   }
 

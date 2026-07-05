@@ -4,7 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
-from api.permissions import IsAdmin
+from api.permissions import IsSuperAdminOnly
 from api.responses import api_response
 
 from .models import Appearance
@@ -20,7 +20,7 @@ def _get_singleton() -> Appearance:
 
 class AdminAppearanceViewSet(viewsets.ModelViewSet):
     serializer_class = AppearanceSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
 
     def list(self, request, *args, **kwargs):
         obj = _get_singleton()

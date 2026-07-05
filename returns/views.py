@@ -3,7 +3,7 @@ from rest_framework import status as drf_status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 
-from api.permissions import IsAdmin
+from api.permissions import IsSuperAdminOnly
 from api.responses import api_response
 
 from .models import ReturnItem, ReturnRequest
@@ -13,7 +13,7 @@ from .serializers import ReturnDecisionSerializer, ReturnItemSerializer, ReturnR
 class AdminReturnViewSet(viewsets.ModelViewSet):
     queryset = ReturnRequest.objects.select_related("order", "user").prefetch_related("items").all()
     serializer_class = ReturnRequestSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
     filterset_fields = ("status",)
     search_fields = ("order__id", "user__email", "reason")
 

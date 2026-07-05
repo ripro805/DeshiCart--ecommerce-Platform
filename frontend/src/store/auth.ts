@@ -17,6 +17,7 @@ interface AuthState {
   clear: () => void;
   fetchMe: () => Promise<User | null>;
   logout: () => void;
+  markHydrated: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -31,11 +32,12 @@ export const useAuthStore = create<AuthState>()(
       setAccessToken: (t) => set({ accessToken: t }),
       setUser: (u) => set({ user: u }),
       clear: () => set({ accessToken: null, refreshToken: null, user: null }),
+      markHydrated: () => set({ isHydrated: true }),
 
       async fetchMe() {
         if (!get().accessToken) return null;
         try {
-          const { data } = await api.get<User>("/auth/users/me/");
+          const { data } = await api.get<User>("/customer/me/");
           set({ user: data });
           return data;
         } catch {
@@ -52,7 +54,7 @@ export const useAuthStore = create<AuthState>()(
       name: "deshicart-auth",
       partialize: (s) => ({ accessToken: s.accessToken, refreshToken: s.refreshToken, user: s.user }),
       onRehydrateStorage: () => (state) => {
-        if (state) state.isHydrated = true;
+        state?.markHydrated();
       },
     }
   )

@@ -12,7 +12,7 @@ export default function NotificationsPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res: any = await apiGet("/api/notifications/");
+        const res: any = await apiGet("/notifications/");
         const list = Array.isArray(res) ? res : res?.results || [];
         setItems(list);
       } catch { setItems([]); }

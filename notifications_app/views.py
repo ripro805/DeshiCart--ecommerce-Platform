@@ -30,6 +30,29 @@ class AdminNotificationViewSet(viewsets.ModelViewSet):
         )
         return api_response(NotificationSerializer(n).data, message="Broadcast queued.", http_status=drf_status.HTTP_201_CREATED)
 
+    @action(detail=True, methods=["post"], url_path="mark_read")
+    def mark_read(self, request, pk=None):
+        n = Notification.objects.filter(pk=pk).first()
+        if not n:
+            return api_response(None, message="Not found.", success=False, http_status=drf_status.HTTP_404_NOT_FOUND)
+        n.is_read = True
+        n.save(update_fields=["is_read"])
+        return api_response(NotificationSerializer(n).data, message="Marked as read.")
+
+    @action(detail=True, methods=["post"], url_path="mark_unread")
+    def mark_unread(self, request, pk=None):
+        n = Notification.objects.filter(pk=pk).first()
+        if not n:
+            return api_response(None, message="Not found.", success=False, http_status=drf_status.HTTP_404_NOT_FOUND)
+        n.is_read = False
+        n.save(update_fields=["is_read"])
+        return api_response(NotificationSerializer(n).data, message="Marked as unread.")
+
+    @action(detail=False, methods=["post"], url_path="mark_all_read")
+    def mark_all_read(self, request):
+        updated = Notification.objects.filter(is_read=False).update(is_read=True)
+        return api_response({"updated": updated}, message="All notifications marked as read.")
+
 
 class CustomerNotificationViewSet(viewsets.GenericViewSet):
     permission_classes = [IsAuthenticated]

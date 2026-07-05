@@ -5,12 +5,9 @@ from django.db.models import Sum, Count, F, DecimalField
 from django.db.models.functions import TruncDate
 from django.http import HttpResponse
 from django.utils import timezone
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.permissions import IsAdmin
+from api.permissions import IsSuperAdminOnly
 from order.models import Order, OrderItem
 from product.models import Product
 from users.models import User
@@ -34,18 +31,18 @@ def _parse_days(request, default: int = 30) -> int:
 
 
 class SalesReportView(APIView):
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
 
     def get(self, request):
         days = _parse_days(request)
         since = timezone.now() - timedelta(days=days)
         qs = (
-            Order.objects.filter(created_at__gte=since, status__in=["delivered", "shipped", "processing"])
+            Order.objects.filter(created_at__gte=since, status__in=["DELIVERED", "SHIPPED", "READY TO SHIP"])
             .annotate(day=TruncDate("created_at"))
             .values("day")
             .annotate(
                 orders=Count("id"),
-                revenue=Sum("total"),
+                revenue=Sum("total_price"),
             )
             .order_by("day")
         )
@@ -61,7 +58,7 @@ class SalesReportView(APIView):
 
 
 class InventoryReportView(APIView):
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
 
     def get(self, request):
         qs = Product.objects.annotate(
@@ -79,11 +76,11 @@ class InventoryReportView(APIView):
 
 
 class CustomerReportView(APIView):
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
 
     def get(self, request):
-        qs = User.objects.filter(role="customer").annotate(
-            orders_count=Count("orders", distinct=True),
+        qs = User.objects.filter(is_staff=False, is_superuser=False).annotate(
+            orders_count=Count("order", distinct=True),
         ).values("id", "email", "date_joined", "orders_count")
         rows = [
             [r["id"], r["email"], r["date_joined"].isoformat() if r["date_joined"] else "", r["orders_count"]]

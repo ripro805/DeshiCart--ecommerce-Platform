@@ -73,12 +73,11 @@ class UserSerializer(serializers.ModelSerializer):
             "role",
             "addresses",
         )
+        # Only ``is_superuser`` stays read-only here; staff / active / blocked
+        # are intentionally writable so the admin panel can toggle them.
         read_only_fields = (
             "id",
             "last_seen_at",
-            "is_active",
-            "is_blocked",
-            "is_staff",
             "is_superuser",
             "date_joined",
             "is_admin_user",

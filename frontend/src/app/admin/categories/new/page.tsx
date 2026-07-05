@@ -22,7 +22,7 @@ export default function NewCategoryPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res: any = await apiGet("/api/categories/");
+        const res: any = await apiGet("/categories/");
         const list = Array.isArray(res) ? res : res?.results || [];
         setCategories(list);
       } catch {}
@@ -33,7 +33,7 @@ export default function NewCategoryPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiPost("/api/categories/", {
+        await apiPost("/categories/", {
         ...form,
         parent: form.parent ? Number(form.parent) : null,
         display_order: Number(form.display_order),

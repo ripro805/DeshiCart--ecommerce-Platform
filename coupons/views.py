@@ -7,7 +7,7 @@ from rest_framework import status as drf_status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from api.permissions import IsAdmin
+from api.permissions import IsSuperAdminOnly
 from api.responses import api_response
 
 from .models import Coupon, CouponUsage
@@ -17,7 +17,7 @@ from .serializers import CouponSerializer, CouponUsageSerializer, CouponValidate
 class AdminCouponViewSet(viewsets.ModelViewSet):
     queryset = Coupon.objects.all()
     serializer_class = CouponSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
     search_fields = ("code", "description")
     filterset_fields = ("is_active", "is_flash_sale", "discount_type")
 

@@ -75,6 +75,7 @@ export default function ProductDetailPage({ params }: Props) {
     router.push(`/login?next=${encodeURIComponent(next)}`);
   };
 
+  
   const onAdd = async () => {
     if (!isAuthenticated) {
       goLogin(`/products/${id}`);

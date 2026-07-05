@@ -20,9 +20,23 @@ export function StoreSyncer() {
   }, [pathname]);
 
   useEffect(() => {
-    if (useAuthStore.getState().accessToken) {
+    let cancelled = false;
+    const run = async () => {
+      const state = useAuthStore.getState();
+      if (!state.accessToken) return;
+      // Make sure we know the role before deciding whether to hit /carts/.
+      let user = state.user;
+      if (!user) {
+        user = await state.fetchMe();
+      }
+      if (cancelled || !user) return;
+      if (user.is_staff || user.is_superuser) return; // admins have no cart
       void useCartStore.getState().fetch();
-    }
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
   }, [pathname]);
 
   return null;

@@ -6,11 +6,12 @@ from .models import ShippingZone, ShippingRate, TrackingUpdate
 
 class ShippingRateSerializer(serializers.ModelSerializer):
     zone_name = serializers.CharField(source="zone.name", read_only=True)
+    eta_days = serializers.IntegerField(source="estimated_days", read_only=False, required=False)
 
     class Meta:
         model = ShippingRate
-        fields = ("id", "zone", "zone_name", "name", "min_weight", "max_weight", "min_order_total", "price", "eta_days", "is_active")
-        read_only_fields = ("id", "zone_name")
+        fields = ("id", "zone", "zone_name", "name", "min_weight", "max_weight", "price", "courier", "estimated_days", "eta_days", "is_active", "created_at")
+        read_only_fields = ("id", "zone_name", "created_at")
 
 
 class ShippingZoneSerializer(serializers.ModelSerializer):

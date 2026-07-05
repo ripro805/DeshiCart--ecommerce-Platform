@@ -12,7 +12,7 @@ export default function AddressesPage() {
 
   async function load() {
     try {
-      const res: any = await apiGet("/api/addresses/");
+      const res: any = await apiGet("/addresses/");
       setAddresses(Array.isArray(res) ? res : res?.results || []);
     } catch { setAddresses([]); }
   }
@@ -23,7 +23,7 @@ export default function AddressesPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await apiPost("/api/addresses/", form);
+      await apiPost("/addresses/", form);
       setShowForm(false);
       setForm({ label: "Home", line1: "", city: "", postcode: "", phone: "", is_default: false });
       await load();
@@ -33,7 +33,7 @@ export default function AddressesPage() {
 
   async function del(id: number) {
     if (!confirm("Delete this address?")) return;
-    await apiDelete(`/api/addresses/${id}/`);
+    await apiDelete(`/addresses/${id}/`);
     await load();
   }
 

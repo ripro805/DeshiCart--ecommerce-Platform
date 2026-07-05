@@ -9,6 +9,6 @@ router.register("expenses", ExpenseViewSet, basename="admin-expenses")
 router.register("transactions", TransactionViewSet, basename="admin-transactions")
 
 urlpatterns = [
-    path("finance/summary/", FinanceSummaryView.as_view({"get": "list"}), name="admin-finance-summary"),
+    path("summary/", FinanceSummaryView.as_view({"get": "list"}), name="admin-finance-summary"),
     path("", include(router.urls)),
 ]

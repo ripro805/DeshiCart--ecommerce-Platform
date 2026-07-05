@@ -14,7 +14,7 @@ export default function NewCMSPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiPost("/api/cms/pages/", form);
+      await apiPost("/cms/pages/", form);
       router.push("/admin/cms");
     } catch (e: any) { alert("Failed: " + (e?.message || "")); }
     finally { setSubmitting(false); }

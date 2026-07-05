@@ -9,7 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
-from api.permissions import IsAdmin
+from api.permissions import IsAdminReadOnlyForStaff
 from api.responses import api_response
 
 from .models import Address
@@ -28,7 +28,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     queryset = User.objects.all().order_by("-date_joined")
     serializer_class = UserSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsAdminReadOnlyForStaff]
     search_fields = ("email", "first_name", "last_name", "phone")
     filterset_fields = ("is_active", "is_staff", "is_blocked")
 
@@ -68,10 +68,61 @@ class UserViewSet(viewsets.ModelViewSet):
     def remove_staff(self, request, pk=None):
         user = self.get_object()
         if user.is_superuser:
-            return api_response(None, message="Cannot demote a superuser.", success=False, status=status.HTTP_400_BAD_REQUEST)
+            return api_response(None, message="Cannot demote a superuser.", success=False, http_status=status.HTTP_400_BAD_REQUEST)
         user.is_staff = False
         user.save(update_fields=["is_staff"])
         return api_response(UserSerializer(user).data, message="Removed staff role.")
+
+    @action(detail=True, methods=["post"], url_path="set-role")
+    def set_role(self, request, pk=None):
+        """Assign a role to a user. Body: ``{"role": "CUSTOMER" | "STAFF_ADMIN"}``.
+
+        New users always register as CUSTOMER. Only a SUPER_ADMIN may promote
+        someone to STAFF_ADMIN or demote a STAFF_ADMIN back to CUSTOMER.
+        Superusers cannot be demoted and you cannot demote yourself.
+        """
+        target = self.get_object()
+        actor = request.user
+
+        if not actor.is_superuser:
+            return api_response(
+                None,
+                message="Only super admins can change roles.",
+                success=False,
+                http_status=status.HTTP_403_FORBIDDEN,
+            )
+
+        new_role = (request.data.get("role") or "").upper().strip()
+        if new_role not in {"CUSTOMER", "STAFF_ADMIN"}:
+            return api_response(
+                None,
+                message="Invalid role. Use CUSTOMER or STAFF_ADMIN.",
+                success=False,
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if target.is_superuser and new_role == "CUSTOMER":
+            return api_response(
+                None,
+                message="Cannot demote a superuser.",
+                success=False,
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if target.id == actor.id:
+            return api_response(
+                None,
+                message="You cannot change your own role.",
+                success=False,
+                http_status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        target.is_staff = new_role == "STAFF_ADMIN"
+        target.save(update_fields=["is_staff"])
+        return api_response(
+            UserSerializer(target).data,
+            message=f"Role updated to {new_role}.",
+        )
 
 
 class AddressViewSet(viewsets.ModelViewSet):

@@ -1,4 +1,4 @@
-"""Wishlist routes."""
+"""Wishlist routes (customer scope, mounted at /api/customer/)."""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 

@@ -107,10 +107,17 @@ class CreateOrderSerializer(serializers.Serializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product = SimpleProductSerializer()
+    total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
         fields = ['id', 'product', 'price', 'quantity', 'total_price']
+
+    def get_total_price(self, obj: OrderItem):
+        try:
+            return float(obj.price) * int(obj.quantity)
+        except Exception:
+            return 0.0
 
 
 class UpdateOrderSerializer(serializers.ModelSerializer):

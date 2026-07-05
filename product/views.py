@@ -21,7 +21,7 @@ from api.responses import api_response
 from .permissions import IsReviewAuthorOrReadonly
 
 class ProductViewSet(ModelViewSet):
-    queryset = Product.objects.select_related('category').all()
+    queryset = Product.objects.select_related('category', 'subcategory', 'brand_ref').all()
     serializer_class = ProductSerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     # filterset_fields = ['category_id']
@@ -103,7 +103,7 @@ class StockLogViewSet(ModelViewSet):
 class AdminProductViewSet(ModelViewSet):
     """Full CRUD for the admin product management screen."""
 
-    queryset = Product.objects.select_related('category', 'subcategory', 'brand_ref').prefetch_related('tags').all()
+    queryset = Product.objects.select_related('category', 'subcategory', 'brand_ref').all()
     serializer_class = AdminProductSerializer
     permission_classes = [IsAdmin]
     pagination_class = DefaultPagination
@@ -133,22 +133,82 @@ class AdminReviewViewSet(ModelViewSet):
     permission_classes = [IsAdmin]
     pagination_class = DefaultPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    search_fields = ['product__name', 'user__email', 'comment']
-    filterset_fields = ['status']
+    search_fields = [
+        'product__name',
+        'product__sku',
+        'user__email',
+        'user__first_name',
+        'user__last_name',
+        'comment',
+        'name',
+    ]
+    filterset_fields = ['status', 'ratings', 'product', 'user', 'verified_purchase']
+    ordering_fields = ['created_at', 'updated_at', 'ratings', 'helpful_count', 'status']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Review.objects.select_related('user', 'product').all()
+
+    def _set_status(self, review, target_status, message):
+        review.status = target_status
+        review.save(update_fields=['status', 'updated_at'])
+        return api_response(
+            AdminReviewSerializer(review).data,
+            message=message,
+        )
 
     @action(detail=True, methods=['post'], url_path='approve')
     def approve(self, request, pk=None):
-        review = self.get_object()
-        review.status = 'APPROVED'
-        review.save(update_fields=['status'])
-        return api_response(AdminReviewSerializer(review).data, message='Review approved.')
+        return self._set_status(self.get_object(), 'APPROVED', 'Review approved.')
 
     @action(detail=True, methods=['post'], url_path='reject')
     def reject(self, request, pk=None):
-        review = self.get_object()
-        review.status = 'REJECTED'
-        review.save(update_fields=['status'])
-        return api_response(AdminReviewSerializer(review).data, message='Review rejected.')
+        return self._set_status(self.get_object(), 'REJECTED', 'Review rejected.')
+
+    @action(detail=True, methods=['post'], url_path='hide')
+    def hide(self, request, pk=None):
+        return self._set_status(self.get_object(), 'HIDDEN', 'Review hidden.')
+
+    @action(detail=True, methods=['post'], url_path='spam')
+    def spam(self, request, pk=None):
+        return self._set_status(self.get_object(), 'SPAM', 'Review flagged as spam.')
+
+    @action(detail=True, methods=['post'], url_path='restore')
+    def restore(self, request, pk=None):
+        """Flip a hidden / spam review back to APPROVED."""
+        return self._set_status(self.get_object(), 'APPROVED', 'Review restored.')
+
+    @action(detail=False, methods=['post'], url_path='bulk')
+    def bulk_update(self, request):
+        """Bulk status update.
+
+        Request body::
+            {
+                "ids": [1, 2, 3],
+                "action": "approve" | "reject" | "hide" | "spam"
+            }
+        """
+        ids = request.data.get('ids') or []
+        action_name = request.data.get('action')
+        mapping = {
+            'approve': 'APPROVED',
+            'reject': 'REJECTED',
+            'hide': 'HIDDEN',
+            'spam': 'SPAM',
+        }
+        target = mapping.get(action_name)
+        if not isinstance(ids, list) or not ids or target is None:
+            return api_response(
+                None,
+                success=False,
+                message='Provide ids (list) and a valid action.',
+                status=400,
+            )
+        updated = Review.objects.filter(id__in=ids).update(status=target)
+        return api_response(
+            {'updated': updated, 'action': action_name},
+            message=f'{updated} reviews updated.',
+        )
 
 
 class ReviewViewSet(ModelViewSet):
@@ -162,7 +222,26 @@ class ReviewViewSet(ModelViewSet):
         serializer.save(user=self.request.user)
 
     def get_queryset(self):
-        return Review.objects.filter(product_id=self.kwargs['product_pk'])
+        """Storefront visibility:
+        - Anonymous / non-staff: only APPROVED reviews
+        - Authors of the review: their own reviews (any status)
+        - Staff / admin (IsAdmin): all reviews for moderation
+        """
+        qs = Review.objects.filter(product_id=self.kwargs['product_pk']).select_related('user', 'product')
+        user = self.request.user
+        if user and user.is_authenticated:
+            # Staff / superuser / admin role see everything
+            if (
+                getattr(user, 'is_staff', False)
+                or getattr(user, 'is_superuser', False)
+                or getattr(user, 'role', None) in {'admin', 'staff', 'superadmin'}
+            ):
+                return qs
+            # Authors can see their own non-approved reviews
+            return qs.filter(
+                Q(status='APPROVED') | Q(user=user)
+            )
+        return qs.filter(status='APPROVED')
 
     def get_serializer_context(self):
         return {'product_id': self.kwargs['product_pk']}

@@ -1,90 +1,205 @@
 "use client";
 
-import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api";
+import { apiGet, apiPatch } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { Plus, Edit, Trash2, Loader2 } from "lucide-react";
-import Link from "next/link";
+import {
+  Megaphone,
+  Loader2,
+  Power,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
+
+type Campaign = {
+  id: number;
+  name: string;
+  description?: string;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  is_active: boolean;
+  created_at?: string;
+};
+
+function fmt(d?: string | null) {
+  if (!d) return null;
+  try {
+    return new Date(d).toLocaleDateString();
+  } catch {
+    return d;
+  }
+}
 
 export default function CampaignsPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
     try {
-      const res: any = await apiGet("/api/marketing/campaigns/");
-      setItems(Array.isArray(res) ? res : res?.results || []);
-    } catch { setItems([]); }
-    finally { setLoading(false); }
+      const res: any = await apiGet("/marketing/campaigns/");
+      const data = res?.results ?? res?.data ?? res;
+      setItems(Array.isArray(data) ? data : []);
+    } catch {
+      setItems([]);
+    } finally {
+      setLoading(false);
+    }
   }
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
-  async function toggle(id: number, active: boolean) {
-    await apiPatch(`/api/marketing/campaigns/${id}/`, { is_active: !active });
-    setItems((xs) => xs.map((x) => x.id === id ? { ...x, is_active: !active } : x));
+  async function toggle(id: number, current: boolean) {
+    try {
+      await apiPatch(`/marketing/campaigns/${id}/`, { is_active: !current });
+      setItems((xs) =>
+        xs.map((x) => (x.id === id ? { ...x, is_active: !current } : x))
+      );
+    } catch (e: any) {
+      alert("Failed: " + (e?.message || ""));
+    }
   }
 
-  async function del(id: number) {
-    if (!confirm("Delete this campaign?")) return;
-    await apiDelete(`/api/marketing/campaigns/${id}/`);
-    setItems((xs) => xs.filter((x) => x.id !== id));
-  }
+  const active = items.filter((c) => c.is_active).length;
+  const total = items.length;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Campaigns</h1>
-          <p className="text-sm text-slate-500">Manage promotional campaigns</p>
-        </div>
-        <Link href="/admin/marketing/campaigns/new" className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-          <Plus className="h-4 w-4" /> New Campaign
-        </Link>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Campaigns</h1>
+        <p className="text-sm text-muted-foreground">
+          Marketing campaigns driving site-wide promotions
+        </p>
       </div>
 
-      <div className="bg-white rounded-lg border border-slate-200">
-        {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>
-        ) : items.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-sm">No campaigns yet. <Link href="/admin/marketing/campaigns/new" className="text-indigo-600 hover:underline">Create your first campaign</Link></div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-5 py-3 text-left">Name</th>
-                <th className="px-5 py-3 text-left">Type</th>
-                <th className="px-5 py-3 text-left">Period</th>
-                <th className="px-5 py-3 text-left">Discount</th>
-                <th className="px-5 py-3 text-left">Status</th>
-                <th className="px-5 py-3 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {items.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium text-slate-900">{c.name}</td>
-                  <td className="px-5 py-3 text-slate-600 capitalize">{c.campaign_type || c.type || "—"}</td>
-                  <td className="px-5 py-3 text-slate-600 text-xs">{c.start_date || "—"} → {c.end_date || "—"}</td>
-                  <td className="px-5 py-3 font-medium">{c.discount}{c.discount_type === "percentage" ? "%" : ""}</td>
-                  <td className="px-5 py-3">
-                    <button onClick={() => toggle(c.id, c.is_active)} className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${c.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
-                      {c.is_active ? "Active" : "Inactive"}
-                    </button>
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <Link href={`/admin/marketing/campaigns/${c.id}`} className="inline-flex p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded">
-                      <Edit className="h-4 w-4" />
-                    </Link>
-                    <button onClick={() => del(c.id)} className="inline-flex p-1.5 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        <Stat
+          label="Total"
+          value={total}
+          icon={Megaphone}
+          color="text-primary bg-primary/10"
+        />
+        <Stat
+          label="Active"
+          value={active}
+          icon={CheckCircle2}
+          color="text-emerald-600 bg-emerald-50"
+        />
+        <Stat
+          label="Inactive"
+          value={total - active}
+          icon={XCircle}
+          color="text-slate-600 bg-muted"
+        />
       </div>
+
+      <section className="rounded-lg border border-border bg-surface">
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : items.length === 0 ? (
+          <div className="p-12 text-center text-sm text-muted-foreground">
+            No campaigns yet. Create one via{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+              admin → Marketing → Campaigns
+            </code>{" "}
+            in Django admin, or POST to{" "}
+            <code className="rounded bg-muted px-1.5 py-0.5 text-xs">
+              /api/marketing/campaigns/
+            </code>
+            .
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {items.map((c) => {
+              const start = fmt(c.starts_at);
+              const end = fmt(c.ends_at);
+              return (
+                <li
+                  key={c.id}
+                  className="flex items-start gap-4 px-5 py-4 hover:bg-muted/40"
+                >
+                  <div
+                    className={`mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      c.is_active
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    <Megaphone className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="truncate text-sm font-semibold text-foreground">
+                        {c.name}
+                      </h3>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          c.is_active
+                            ? "bg-emerald-50 text-emerald-700"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {c.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                    {c.description && (
+                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                        {c.description}
+                      </p>
+                    )}
+                    {(start || end) && (
+                      <div className="mt-2 flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        {start && <span>Start {start}</span>}
+                        {start && end && <span>→</span>}
+                        {end && <span>End {end}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => toggle(c.id, c.is_active)}
+                    title={c.is_active ? "Deactivate" : "Activate"}
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-md border border-border hover:bg-muted ${
+                      c.is_active
+                        ? "text-emerald-600"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    <Power className="h-4 w-4" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  icon: Icon,
+  color,
+}: {
+  label: string;
+  value: number | string;
+  icon: any;
+  color: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-surface p-5">
+      <div
+        className={`mb-3 inline-flex h-9 w-9 items-center justify-center rounded-lg ${color}`}
+      >
+        <Icon className="h-5 w-5" />
+      </div>
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
     </div>
   );
 }

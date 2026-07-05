@@ -1,88 +1,152 @@
 "use client";
 
-import { apiGet, apiPost } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { LayoutGrid, Save, Loader2, Plus, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { FileText, HelpCircle, LinkIcon } from "lucide-react";
+import { apiGet } from "@/lib/api";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
+import { ErrorState, LoadingState } from "@/components/admin/feedback/states";
+import { toast } from "@/components/admin/feedback/toast-store";
+
+type Page = { id: number; title: string; slug: string };
+type FAQ = { id: number; question: string; answer: string };
+type ContentHome = { pages?: Page[]; faqs?: FAQ[] };
 
 export default function ContentPage() {
-  const [content, setContent] = useState<any>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const { allowed, loading: permLoading } = usePermissionState("manage_content");
+  const [data, setData] = useState<ContentHome>({ pages: [], faqs: [] });
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!allowed) return;
     (async () => {
       try {
-        const res: any = await apiGet("/api/content/homepage/");
-        setContent(res);
-      } catch {
-        setContent({
-          hero_title: "Welcome to DeshiCart",
-          hero_subtitle: "Authentic products from across Bangladesh",
-          featured_categories: [],
-          promo_blocks: [],
+        const res: any = await apiGet("/content/home/");
+        const payload = res?.data ?? res ?? {};
+        setData({
+          pages: Array.isArray(payload.pages) ? payload.pages : [],
+          faqs: Array.isArray(payload.faqs) ? payload.faqs : [],
         });
-      } finally { setLoaded(true); }
+      } catch (e: any) {
+        setLoadError(e?.message || "Failed to load content");
+        toast.error("Content load failed", e?.message || "Try again");
+      } finally {
+        setLoading(false);
+      }
     })();
-  }, []);
+  }, [allowed]);
 
-  async function save() {
-    setSaving(true);
-    try {
-      await apiPost("/api/content/homepage/", content);
-      alert("Content saved");
-    } catch (e: any) { alert("Failed: " + e?.message); }
-    finally { setSaving(false); }
-  }
+  if (permLoading) return <LoadingState label="Checking permissions…" />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need manage_content to view this page." />;
+  if (loading) return <LoadingState label="Loading content…" />;
+  if (loadError) return <ErrorState title="Couldn't load content" description={loadError} />;
 
-  function set(k: string, v: any) { setContent((f: any) => ({ ...f, [k]: v })); }
-
-  if (!loaded) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>;
+  const pages = data.pages ?? [];
+  const faqs = data.faqs ?? [];
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Homepage Content</h1>
-        <p className="text-sm text-slate-500">Configure what customers see on the homepage</p>
-      </div>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Content</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Public-facing content surfaced across the storefront
+        </p>
+      </header>
 
-      <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
-        <h3 className="text-sm font-semibold text-slate-700 flex items-center gap-2"><LayoutGrid className="h-4 w-4" /> Hero Section</h3>
-        <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">Hero Title</label>
-          <input value={content.hero_title || ""} onChange={(e) => set("hero_title", e.target.value)} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">Hero Subtitle</label>
-          <textarea value={content.hero_subtitle || ""} onChange={(e) => set("hero_subtitle", e.target.value)} rows={2} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md" />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg border border-slate-200 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-slate-700">Promo Blocks</h3>
-          <button type="button" onClick={() => set("promo_blocks", [...(content.promo_blocks || []), { title: "", text: "", color: "#4f46e5" }])} className="text-xs inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded">
-            <Plus className="h-3 w-3" /> Add
-          </button>
-        </div>
-        {(content.promo_blocks || []).map((b: any, i: number) => (
-          <div key={i} className="border border-slate-200 rounded-md p-3 space-y-2 relative">
-            <button type="button" onClick={() => set("promo_blocks", content.promo_blocks.filter((_: any, idx: number) => idx !== i))} className="absolute top-2 right-2 text-rose-600 p-1">
-              <Trash2 className="h-3 w-3" />
-            </button>
-            <div className="grid grid-cols-3 gap-2">
-              <input placeholder="Title" value={b.title || ""} onChange={(e) => set("promo_blocks", content.promo_blocks.map((x: any, idx: number) => idx === i ? { ...x, title: e.target.value } : x))} className="px-2 py-1 text-sm border border-slate-200 rounded col-span-2" />
-              <input type="color" value={b.color || "#4f46e5"} onChange={(e) => set("promo_blocks", content.promo_blocks.map((x: any, idx: number) => idx === i ? { ...x, color: e.target.value } : x))} className="h-8 rounded border border-slate-200" />
-            </div>
-            <textarea placeholder="Description" value={b.text || ""} onChange={(e) => set("promo_blocks", content.promo_blocks.map((x: any, idx: number) => idx === i ? { ...x, text: e.target.value } : x))} rows={2} className="w-full px-2 py-1 text-sm border border-slate-200 rounded" />
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <FileText className="h-5 w-5" />
           </div>
-        ))}
+          <p className="text-3xl font-semibold tabular-nums text-foreground">{pages.length}</p>
+          <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">Published pages</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+            <HelpCircle className="h-5 w-5" />
+          </div>
+          <p className="text-3xl font-semibold tabular-nums text-foreground">{faqs.length}</p>
+          <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">Active FAQs</p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-surface p-5">
+          <div className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Quick links
+          </div>
+          <div className="flex flex-col gap-2 text-sm">
+            <Link
+              href="/admin/cms"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-foreground hover:bg-muted"
+            >
+              <LinkIcon className="h-4 w-4 text-primary" />
+              Manage CMS pages
+            </Link>
+            <Link
+              href="/admin/support"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-foreground hover:bg-muted"
+            >
+              <LinkIcon className="h-4 w-4 text-primary" />
+              Manage FAQs & tickets
+            </Link>
+            <Link
+              href="/admin/appearance"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-foreground hover:bg-muted"
+            >
+              <LinkIcon className="h-4 w-4 text-primary" />
+              Hero & theme
+            </Link>
+          </div>
+        </div>
       </div>
 
-      <div className="flex justify-end">
-        <button onClick={save} disabled={saving} className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50">
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Content
-        </button>
-      </div>
+      <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+        <header className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h2 className="text-sm font-semibold text-foreground">Published pages</h2>
+          <span className="text-xs text-muted-foreground">{pages.length} total</span>
+        </header>
+        {pages.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            No published pages yet
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {pages.map((p) => (
+              <li key={p.id} className="flex items-center justify-between px-5 py-3 hover:bg-muted/40">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{p.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">/{p.slug}</p>
+                </div>
+                <Link href="/admin/cms" className="text-xs font-medium text-primary hover:underline">
+                  Edit
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+        <header className="flex items-center justify-between border-b border-border px-5 py-3">
+          <h2 className="text-sm font-semibold text-foreground">Active FAQs</h2>
+          <span className="text-xs text-muted-foreground">{faqs.length} total</span>
+        </header>
+        {faqs.length === 0 ? (
+          <div className="px-5 py-10 text-center text-sm text-muted-foreground">
+            No active FAQs yet
+          </div>
+        ) : (
+          <ul className="divide-y divide-border">
+            {faqs.map((f) => (
+              <li key={f.id} className="px-5 py-4 hover:bg-muted/30">
+                <p className="text-sm font-medium text-foreground">{f.question}</p>
+                <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{f.answer}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

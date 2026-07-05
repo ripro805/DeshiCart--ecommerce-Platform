@@ -2,7 +2,7 @@
 from rest_framework import status as drf_status, viewsets
 from rest_framework.permissions import AllowAny
 
-from api.permissions import IsAdmin
+from api.permissions import IsSuperAdminOnly
 from api.responses import api_response
 
 from .models import Page
@@ -12,7 +12,7 @@ from .serializers import PageSerializer
 class AdminPageViewSet(viewsets.ModelViewSet):
     queryset = Page.objects.all()
     serializer_class = PageSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
     search_fields = ("title", "slug", "body")
     filterset_fields = ("is_published",)
 

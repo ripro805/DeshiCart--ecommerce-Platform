@@ -26,7 +26,10 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (r) => r,
+  (r) => {
+    r.data = unwrap(r.data);
+    return r;
+  },
   async (error: AxiosError) => {
     const original = error.config as AxiosRequestConfig & { _retry?: boolean };
     const status = error.response?.status;

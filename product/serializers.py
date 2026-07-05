@@ -20,7 +20,15 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ['id', 'name', 'slug', 'description', 'image', 'product_count']
+        fields = ['id', 'name', 'slug', 'description', 'image',
+                  'is_featured', 'is_active', 'order', 'product_count']
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Coalesce None -> False so the admin pill renders correctly.
+        data['is_active'] = bool(data.get('is_active'))
+        data['is_featured'] = bool(data.get('is_featured'))
+        return data
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -29,6 +37,7 @@ class ProductSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
+    tags = serializers.JSONField(read_only=True)
 
     class Meta:
         model = Product
@@ -36,7 +45,8 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'sku', 'brand',
             'short_description', 'description',
             'price', 'discounted_price',
-            'stock', 'image', 'image_external_url', 'image_url',
+            'stock', 'low_stock_threshold',
+            'image', 'image_external_url', 'image_url',
             'gallery', 'specifications', 'tags',
             'rating', 'total_reviews',
             'category', 'price_with_tax', 'average_rating', 'review_count',
@@ -59,7 +69,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return url
 
     def get_average_rating(self, product):
-        agg = product.review_set.aggregate(avg=Avg('ratings'))
+        agg = product.reviews.aggregate(avg=Avg('ratings'))
         avg = agg.get('avg')
         if avg is None:
             return 0
@@ -67,7 +77,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return float(round(avg, 2))
 
     def get_review_count(self, product):
-        return product.review_set.count()
+        return product.reviews.count()
 
     def validate_price(self, value):
         if value <= 0:
@@ -184,7 +194,7 @@ class AdminProductSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
     subcategory = SubCategorySerializer(read_only=True)
     brand_ref = BrandSerializer(read_only=True)
-    tags = TagSerializer(many=True, read_only=True)
+    tags = serializers.JSONField(read_only=True)
     average_rating = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
 
@@ -233,16 +243,21 @@ class AdminProductSerializer(serializers.ModelSerializer):
         return request.build_absolute_uri(url) if request else url
 
     def get_average_rating(self, product):
-        agg = product.review_set.aggregate(avg=Avg("ratings"))
+        agg = product.reviews.aggregate(avg=Avg("ratings"))
         return float(round(agg.get("avg") or 0, 2))
 
     def get_review_count(self, product):
-        return product.review_set.count()
+        return product.reviews.count()
 
 
 class AdminReviewSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source="user.email", read_only=True)
+    user_first_name = serializers.CharField(source="user.first_name", read_only=True)
+    user_last_name = serializers.CharField(source="user.last_name", read_only=True)
+    user_avatar = serializers.CharField(source="user.avatar", read_only=True)
     product_name = serializers.CharField(source="product.name", read_only=True)
+    product_sku = serializers.CharField(source="product.sku", read_only=True)
+    product_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Review
@@ -250,10 +265,49 @@ class AdminReviewSerializer(serializers.ModelSerializer):
             "id",
             "user",
             "user_email",
+            "user_first_name",
+            "user_last_name",
+            "user_avatar",
             "product",
             "product_name",
+            "product_sku",
+            "product_image_url",
             "ratings",
             "comment",
             "status",
+            "verified_purchase",
+            "helpful_count",
             "created_at",
+            "updated_at",
         )
+        read_only_fields = (
+            "user",
+            "user_email",
+            "user_first_name",
+            "user_last_name",
+            "user_avatar",
+            "product",
+            "product_name",
+            "product_sku",
+            "product_image_url",
+            "verified_purchase",
+            "helpful_count",
+            "created_at",
+            "updated_at",
+        )
+
+    def get_product_image_url(self, review):
+        """Reuse ProductSerializer.get_image_url logic so admin sees the same
+        thumbnail the storefront would show."""
+        product = review.product
+        if not product:
+            return None
+        if product.image_external_url:
+            return product.image_external_url
+        if not product.image:
+            return None
+        request = self.context.get("request")
+        url = product.image.url
+        if request is not None:
+            return request.build_absolute_uri(url)
+        return url

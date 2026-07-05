@@ -3,7 +3,7 @@ from rest_framework import status as drf_status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 
-from api.permissions import IsAdmin
+from api.permissions import IsSuperAdminOnly
 from api.responses import api_response
 
 from .models import StoreSettings
@@ -17,7 +17,7 @@ def _get_singleton() -> StoreSettings:
 
 class AdminStoreSettingsViewSet(viewsets.ViewSet):
     """Singleton viewset: list/retrieve/update the single settings row."""
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
     serializer_class = StoreSettingsSerializer
 
     def list(self, request):
@@ -26,6 +26,13 @@ class AdminStoreSettingsViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk=None):
         obj = _get_singleton()
         return api_response(StoreSettingsSerializer(obj).data)
+
+    def create(self, request):
+        obj = _get_singleton()
+        s = StoreSettingsSerializer(obj, data=request.data, partial=True)
+        s.is_valid(raise_exception=True)
+        s.save()
+        return api_response(s.data, message="Settings updated.")
 
     def partial_update(self, request, pk=None):
         obj = _get_singleton()
@@ -44,9 +51,9 @@ class AdminStoreSettingsViewSet(viewsets.ViewSet):
     @action(detail=False, methods=["post"], url_path="toggle-maintenance")
     def toggle_maintenance(self, request):
         obj = _get_singleton()
-        obj.is_maintenance_mode = not obj.is_maintenance_mode
-        obj.save(update_fields=["is_maintenance_mode", "updated_at"])
-        return api_response(StoreSettingsSerializer(obj).data, message=f"Maintenance mode {'on' if obj.is_maintenance_mode else 'off'}.")
+        obj.maintenance_mode = not obj.maintenance_mode
+        obj.save(update_fields=["maintenance_mode", "updated_at"])
+        return api_response(StoreSettingsSerializer(obj).data, message=f"Maintenance mode {'on' if obj.maintenance_mode else 'off'}.")
 
 
 class PublicStoreSettingsView(viewsets.ViewSet):

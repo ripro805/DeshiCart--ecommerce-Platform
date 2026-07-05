@@ -7,12 +7,14 @@ import { isAdmin, isSuperAdmin, roleOf, type AuthTokens, type User, type UserRol
 
 export function useAuth() {
   const store = useAuthStore();
+  const accessToken = store.accessToken;
+  const currentUser = store.user;
 
   useEffect(() => {
-    if (store.accessToken && !store.user) {
-      void store.fetchMe();
+    if (accessToken && !currentUser) {
+      void useAuthStore.getState().fetchMe();
     }
-  }, [store.accessToken]);
+  }, [accessToken, currentUser]);
 
   async function login(email: string, password: string): Promise<AuthTokens> {
     const { data } = await api.post<AuthTokens>("/auth/jwt/create/", { email, password });
@@ -61,12 +63,12 @@ export function useAuth() {
   }
 
   async function updateProfile(patch: Partial<User>): Promise<User> {
-    const { data } = await api.patch<User>("/auth/users/me/", patch);
+    const { data } = await api.patch<User>("/customer/me/", patch);
     store.setUser(data);
     return data;
   }
 
-  const user = store.user;
+  const user = currentUser;
   const role: UserRole = roleOf(user);
   return {
     ...store,

@@ -4,7 +4,7 @@ from rest_framework import status as drf_status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from api.permissions import IsAdmin
+from api.permissions import IsSuperAdminOnly
 from api.responses import api_response
 
 from .models import Banner, Campaign, NewsletterSubscriber
@@ -18,21 +18,21 @@ from .serializers import (
 class AdminBannerViewSet(viewsets.ModelViewSet):
     queryset = Banner.objects.all()
     serializer_class = BannerSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
     filterset_fields = ("position", "is_active")
 
 
 class AdminCampaignViewSet(viewsets.ModelViewSet):
     queryset = Campaign.objects.all()
     serializer_class = CampaignSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
     filterset_fields = ("is_active",)
 
 
 class AdminNewsletterViewSet(viewsets.ModelViewSet):
     queryset = NewsletterSubscriber.objects.all()
     serializer_class = NewsletterSubscriberSerializer
-    permission_classes = [IsAdmin]
+    permission_classes = [IsSuperAdminOnly]
     filterset_fields = ("is_active",)
     search_fields = ("email",)
 

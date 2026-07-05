@@ -14,7 +14,7 @@ export default function SupportPage() {
 
   async function load() {
     try {
-      const res: any = await apiGet("/api/support/tickets/");
+      const res: any = await apiGet("/support/tickets/");
       const list = Array.isArray(res) ? res : res?.results || [];
       setTickets(list);
     } catch { setTickets([]); }
@@ -27,7 +27,7 @@ export default function SupportPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const created: any = await apiPost("/api/support/tickets/", form);
+      const created: any = await apiPost("/support/tickets/", form);
       setShowForm(false);
       setForm({ subject: "", message: "", priority: "low" });
       await load();

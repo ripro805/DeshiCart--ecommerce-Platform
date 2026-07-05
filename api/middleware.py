@@ -50,10 +50,25 @@ class APIResponseEnvelopeMiddleware:
         if isinstance(parsed, dict) and "success" in parsed and "message" in parsed and "data" in parsed:
             return response
 
+        status_code = getattr(response, "status_code", 200)
+        is_error = bool(status_code >= 400)
+
+        message = ""
+        data = parsed
+
         if isinstance(parsed, dict):
-            envelope = {"success": True, "message": "", "data": parsed}
-        else:
-            envelope = {"success": True, "message": "", "data": parsed}
+            if is_error:
+                if isinstance(parsed.get("detail"), str):
+                    message = parsed.get("detail", "")
+                elif isinstance(parsed.get("message"), str):
+                    message = parsed.get("message", "")
+                else:
+                    message = "Request failed."
+            else:
+                if isinstance(parsed.get("message"), str):
+                    message = parsed.get("message", "")
+
+        envelope = {"success": not is_error, "message": message, "data": data}
 
         new_body = json.dumps(envelope).encode("utf-8")
         response.content = new_body

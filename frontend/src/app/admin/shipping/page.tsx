@@ -1,121 +1,167 @@
 "use client";
 
-import { apiGet, apiPost, apiDelete } from "@/lib/api";
 import { useEffect, useState } from "react";
-import { Truck, Loader2, Save, Trash2, Plus } from "lucide-react";
+import { Truck, Plus, Edit, Trash2 } from "lucide-react";
+import { apiGet, apiDelete } from "@/lib/api";
+import { toast } from "@/components/admin/feedback/toast-store";
+import { useConfirm } from "@/components/admin/feedback/confirm-dialog";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
+import { EmptyState, ErrorState, LoadingState } from "@/components/admin/feedback/states";
+import { formatPrice } from "@/lib/utils";
+
+type Method = {
+  id: number;
+  name: string;
+  description?: string;
+  price?: number | string;
+  is_active?: boolean;
+  estimated_days_min?: number;
+  estimated_days_max?: number;
+};
 
 export default function ShippingPage() {
-  const [methods, setMethods] = useState<any[]>([]);
+  const { allowed, loading: permLoading } = usePermissionState("manage_shipping");
+  const [items, setItems] = useState<Method[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", cost: 0, eta_days: 3, is_active: true });
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const confirm = useConfirm();
 
   async function load() {
     setLoading(true);
+    setLoadError(null);
     try {
-      const res: any = await apiGet("/api/shipping/methods/");
-      setMethods(Array.isArray(res) ? res : res?.results || []);
-    } catch { setMethods([]); }
-    finally { setLoading(false); }
+      const res: any = await apiGet("/shipping/rates/");
+      setItems(Array.isArray(res) ? res : res?.results || []);
+    } catch (e: any) {
+      setLoadError(e?.message || "Failed to load shipping methods");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    if (allowed) void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allowed]);
 
-  async function add(e: React.FormEvent) {
-    e.preventDefault();
-    setSaving(true);
+  async function del(m: Method) {
+    const ok = await confirm({
+      title: "Delete shipping method?",
+      description: `"${m.name}" will be removed. Existing orders referencing it will keep their snapshot.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
     try {
-      await apiPost("/api/shipping/methods/", form);
-      setShowForm(false);
-      setForm({ name: "", cost: 0, eta_days: 3, is_active: true });
-      await load();
-    } catch (e: any) { alert("Failed: " + e?.message); }
-    finally { setSaving(false); }
+      await apiDelete(`/shipping/rates/${m.id}/`);
+      setItems((xs) => xs.filter((x) => x.id !== m.id));
+      toast.success("Shipping method deleted", m.name);
+    } catch (e: any) {
+      toast.error("Delete failed", e?.message || "Please try again");
+    }
   }
 
-  async function del(id: number) {
-    if (!confirm("Delete this method?")) return;
-    await apiDelete(`/api/shipping/methods/${id}/`);
-    await load();
-  }
+  if (permLoading) return <LoadingState label="Checking permissions…" />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need manage_shipping to view this page." />;
+  if (loading) return <LoadingState label="Loading shipping methods…" />;
+  if (loadError) return <ErrorState title="Couldn't load shipping methods" description={loadError} />;
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Shipping Methods</h1>
-          <p className="text-sm text-slate-500">Delivery options for customers</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Shipping</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Manage shipping methods, rates and delivery windows
+          </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-          <Plus className="h-4 w-4" /> Add Method
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+          onClick={() => toast.info("Editor coming soon", "Use the API to add a shipping method for now.")}
+        >
+          <Plus className="h-4 w-4" />
+          New Method
         </button>
-      </div>
+      </header>
 
-      {showForm && (
-        <form onSubmit={add} className="bg-white rounded-lg border border-slate-200 p-5">
-          <h3 className="text-sm font-semibold text-slate-700 mb-3">New Shipping Method</h3>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-slate-700 mb-1">Name</label>
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g. Express Delivery" className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md" required />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Cost (BDT)</label>
-              <input type="number" value={form.cost} onChange={(e) => setForm({ ...form, cost: parseFloat(e.target.value) || 0 })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">ETA (days)</label>
-              <input type="number" value={form.eta_days} onChange={(e) => setForm({ ...form, eta_days: parseInt(e.target.value) || 1 })} className="w-full px-3 py-2 text-sm border border-slate-200 rounded-md" />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-4">
-            <button type="button" onClick={() => setShowForm(false)} className="px-3 py-1.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-md">Cancel</button>
-            <button type="submit" disabled={saving} className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-md disabled:opacity-50">
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save
-            </button>
-          </div>
-        </form>
-      )}
-
-      {loading ? (
-        <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-indigo-600" /></div>
-      ) : methods.length === 0 ? (
-        <div className="bg-white rounded-lg border border-slate-200 p-12 text-center">
-          <Truck className="h-12 w-12 mx-auto text-slate-300" />
-          <p className="mt-3 text-sm text-slate-500">No shipping methods configured</p>
+      {items.length === 0 ? (
+        <div className="rounded-2xl border border-border bg-surface p-6">
+          <EmptyState
+            icon={Truck}
+            title="No shipping methods yet"
+            description="Add your first method to start offering delivery options at checkout."
+            action={{ label: "Refresh", onClick: load }}
+          />
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-xs text-slate-600 uppercase">
-              <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Cost</th>
-                <th className="px-4 py-3">ETA</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {methods.map((m) => (
-                <tr key={m.id} className="hover:bg-slate-50">
-                  <td className="px-4 py-3 font-medium">{m.name}</td>
-                  <td className="px-4 py-3">৳{m.cost}</td>
-                  <td className="px-4 py-3 text-slate-600">{m.eta_days} days</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${m.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-700"}`}>
-                      {m.is_active ? "active" : "inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <button onClick={() => del(m.id)} className="text-rose-600 hover:bg-rose-50 p-1 rounded"><Trash2 className="h-4 w-4" /></button>
-                  </td>
+        <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <tr>
+                  <th className="px-5 py-3 font-medium">Method</th>
+                  <th className="px-5 py-3 font-medium">Price</th>
+                  <th className="px-5 py-3 font-medium">ETA</th>
+                  <th className="px-5 py-3 font-medium">Status</th>
+                  <th className="px-5 py-3 text-right font-medium">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {items.map((m) => (
+                  <tr key={m.id} className="transition hover:bg-muted/40">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Truck className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{m.name}</p>
+                          {m.description && <p className="text-xs text-muted-foreground">{m.description}</p>}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 tabular-nums text-foreground">৳{formatPrice(m.price ?? 0)}</td>
+                    <td className="px-5 py-3 text-muted-foreground">
+                      {m.estimated_days_min || m.estimated_days_max
+                        ? `${m.estimated_days_min ?? "?"}–${m.estimated_days_max ?? "?"} days`
+                        : "—"}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          m.is_active
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {m.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-right">
+                      <div className="inline-flex items-center gap-1">
+                        <button
+                          onClick={() => toast.info("Editor coming soon")}
+                          className="inline-flex rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                          aria-label="Edit"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => del(m)}
+                          className="inline-flex rounded-lg p-1.5 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600 dark:hover:text-rose-300"
+                          aria-label="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
     </div>
   );

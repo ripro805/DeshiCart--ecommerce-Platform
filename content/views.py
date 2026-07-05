@@ -12,7 +12,7 @@ class ContentHomeView(APIView):
 
     def get(self, request):
         pages = list(
-            Page.objects.filter(status="published").values("id", "title", "slug")[:20]
+            Page.objects.filter(is_published=True).values("id", "title", "slug")[:20]
         )
         faqs = list(
             FAQItem.objects.filter(is_active=True).values("id", "question", "answer")[:20]

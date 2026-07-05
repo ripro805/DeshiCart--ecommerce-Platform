@@ -14,7 +14,7 @@ export default function ReturnDetailPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res: any = await apiGet(`/api/returns/${id}/`);
+        const res: any = await apiGet(`/returns/${id}/`);
         setItem(res);
       } catch {}
       finally { setLoading(false); }

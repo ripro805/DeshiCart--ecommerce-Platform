@@ -17,8 +17,8 @@ export default function AccountReturnsPage() {
     setLoading(true);
     try {
       const [r, o]: any = await Promise.all([
-        apiGet("/api/returns/").catch(() => []),
-        apiGet("/api/orders/").catch(() => []),
+        apiGet("/returns/").catch(() => []),
+        apiGet("/orders/").catch(() => []),
       ]);
       setReturns(Array.isArray(r) ? r : r?.results || []);
       setOrders(Array.isArray(o) ? o : o?.results || []);
@@ -32,7 +32,7 @@ export default function AccountReturnsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await apiPost("/api/returns/", { order: parseInt(form.order_id), reason: form.reason, description: form.description });
+      await apiPost("/returns/", { order: parseInt(form.order_id), reason: form.reason, description: form.description });
       setShowForm(false);
       setForm({ order_id: "", reason: "", description: "" });
       await load();

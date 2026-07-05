@@ -9,6 +9,7 @@ class Category(models.Model):
     description = models.TextField(blank=True, null=True)
     image = models.URLField(max_length=500, blank=True, null=True)
     is_featured = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -134,6 +135,8 @@ class Review(models.Model):
         ("PENDING", "Pending"),
         ("APPROVED", "Approved"),
         ("REJECTED", "Rejected"),
+        ("HIDDEN", "Hidden"),
+        ("SPAM", "Spam"),
     )
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -143,14 +146,26 @@ class Review(models.Model):
     name = models.CharField(max_length=100)
     comment = models.TextField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="PENDING")
+    verified_purchase = models.BooleanField(default=False)
+    helpful_count = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["status"], name="review_status_idx"),
+            models.Index(fields=["product", "status"], name="review_prod_stat_idx"),
+            models.Index(fields=["ratings"], name="review_ratings_idx"),
+        ]
 
     def __str__(self):
         return f"{self.name} – {self.product.name} ({self.ratings})"
+
+    @property
+    def is_visible(self) -> bool:
+        """Customer-facing visibility: only APPROVED reviews appear on the storefront."""
+        return self.status == "APPROVED"
 
 
 class StockLog(models.Model):

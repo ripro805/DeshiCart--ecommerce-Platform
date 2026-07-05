@@ -15,7 +15,7 @@ export default function SupportDetailPage() {
 
   async function load() {
     try {
-      const res: any = await apiGet(`/api/support/tickets/${id}/`);
+      const res: any = await apiGet(`/support/tickets/${id}/`);
       setTicket(res);
     } catch {}
     finally { setLoading(false); }
@@ -27,7 +27,7 @@ export default function SupportDetailPage() {
     if (!reply.trim()) return;
     setSubmitting(true);
     try {
-      await apiPost(`/api/support/tickets/${id}/reply/`, { message: reply });
+      await apiPost(`/support/tickets/${id}/reply/`, { message: reply });
       setReply("");
       await load();
     } catch (e: any) { alert("Failed: " + e?.message); }

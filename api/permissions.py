@@ -58,3 +58,27 @@ class IsCustomer(BasePermission):
     def has_permission(self, request, view):
         user = getattr(request, "user", None)
         return bool(user and user.is_authenticated)
+
+
+class IsSuperAdminOnly(BasePermission):
+    """Only super admins may access."""
+
+    message = "Super admin privileges required."
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        return bool(user and user.is_authenticated and user.is_superuser)
+
+
+class IsAdminReadOnlyForStaff(BasePermission):
+    """Admins can read; only super admins can modify."""
+
+    message = "Only super admin can modify this resource."
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        if not (user and user.is_authenticated and (user.is_staff or user.is_superuser)):
+            return False
+        if user.is_superuser:
+            return True
+        return request.method in SAFE_METHODS

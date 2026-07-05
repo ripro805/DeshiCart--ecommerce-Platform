@@ -16,6 +16,7 @@ import {
   Package,
   Heart,
   LogIn,
+  LayoutGrid,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -47,6 +48,7 @@ export function Navbar() {
 
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
+  const isHydrated = useAuthStore((s) => s.isHydrated);
   const isAuth = !!accessToken;
   const clearAuth = () => {
     useAuthStore.getState().clear();
@@ -150,7 +152,9 @@ export function Navbar() {
                 )}
               </button>
 
-              {isAuth ? (
+              {!isHydrated ? (
+                <div className="hidden sm:block h-10 w-10 rounded-full bg-ink-200/70 dark:bg-ink-800/70 animate-pulse" />
+              ) : isAuth ? (
                 <div className="hidden sm:block">
                   <UserMenu user={user} onSignOut={clearAuth} />
                 </div>
@@ -214,6 +218,8 @@ export function Navbar() {
 
 function UserMenu({ user, onSignOut }: { user: ReturnType<typeof useAuthStore.getState>["user"]; onSignOut: () => void }) {
   const [open, setOpen] = useState(false);
+  const isAdmin = !!(user?.is_superuser || user?.is_staff);
+  const adminLabel = user?.is_superuser ? "Super Admin Panel" : "Staff Admin Panel";
   return (
     <div className="relative">
       <button
@@ -236,6 +242,7 @@ function UserMenu({ user, onSignOut }: { user: ReturnType<typeof useAuthStore.ge
             <MenuLink href="/account"      icon={<User className="h-4 w-4" />}    label="Account" />
             <MenuLink href="/account/orders" icon={<Package className="h-4 w-4" />} label="Orders" />
             <MenuLink href="/account/wishlist" icon={<Heart className="h-4 w-4" />}  label="Wishlist" />
+            {isAdmin && <MenuLink href="/admin/dashboard" icon={<LayoutGrid className="h-4 w-4" />} label={adminLabel} />}
             <div className="my-1 h-px bg-ink-200/60 dark:bg-ink-800" />
             <button
               onClick={() => { setOpen(false); onSignOut(); }}
@@ -268,6 +275,7 @@ function MobileMenu({ open, onClose, isAuth, user, onSignOut }: {
   user: ReturnType<typeof useAuthStore.getState>["user"];
   onSignOut: () => void;
 }) {
+  const isAdmin = !!(user?.is_superuser || user?.is_staff);
   return (
     <>
       <div
@@ -305,6 +313,7 @@ function MobileMenu({ open, onClose, isAuth, user, onSignOut }: {
               <p className="px-4 text-xs uppercase tracking-wide text-ink-400">Hello, {user?.first_name || user?.email}</p>
               <Link href="/account"        className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">Account</Link>
               <Link href="/account/orders" className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">Orders</Link>
+              {isAdmin && <Link href="/admin/dashboard" className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">{user?.is_superuser ? "Super Admin Panel" : "Staff Admin Panel"}</Link>}
               <button onClick={onSignOut} className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 font-medium text-danger hover:bg-ink-100 dark:hover:bg-ink-900">
                 <LogOut className="h-4 w-4" /> Sign out
               </button>

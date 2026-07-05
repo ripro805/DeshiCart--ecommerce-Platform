@@ -17,8 +17,8 @@ class WishlistViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         if self.request.user.is_admin_user:
-            return Wishlist.objects.all().prefetch_related("items__product")
-        return Wishlist.objects.filter(user=self.request.user).prefetch_related("items__product")
+            return Wishlist.objects.all().select_related("user").prefetch_related("items__product")
+        return Wishlist.objects.filter(user=self.request.user).select_related("user").prefetch_related("items__product")
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

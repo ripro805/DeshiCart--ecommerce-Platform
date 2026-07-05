@@ -55,8 +55,32 @@ export interface Review {
   product: number;
   ratings: number;       // 1..5
   comment: string;
+  status?: ReviewStatus;
+  verified_purchase?: boolean;
+  helpful_count?: number;
   created_at: string;
   updated_at?: string;
+}
+
+export type ReviewStatus = "PENDING" | "APPROVED" | "REJECTED" | "HIDDEN" | "SPAM";
+
+export const REVIEW_STATUSES: ReviewStatus[] = [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "HIDDEN",
+  "SPAM",
+];
+
+/** Flat row shape returned by `/api/admin/reviews/`. Mirrors `AdminReviewSerializer`. */
+export interface AdminReview extends Review {
+  user_email: string;
+  user_first_name?: string;
+  user_last_name?: string;
+  user_avatar?: string | null;
+  product_name: string;
+  product_sku?: string;
+  product_image_url?: string | null;
 }
 
 export interface Product {
