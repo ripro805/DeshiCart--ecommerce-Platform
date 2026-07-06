@@ -9,6 +9,7 @@ import { ProductImage } from "@/components/ui/product-image";
 import { Price } from "@/components/ui/price";
 import { StarRating } from "@/components/ui/stars";
 import { Badge } from "@/components/ui/badge";
+import { WishlistButton } from "@/components/product/wishlist-button";
 import { useCartStore } from "@/store/cart";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/utils";
@@ -79,8 +80,11 @@ export function ProductCard({ product, index = 0 }: Props) {
               )}
             </button>
           </div>
+          <div className="absolute left-2 top-2 z-10">
+            <WishlistButton productId={product.id} size="sm" />
+          </div>
           {product.category?.name && (
-            <Badge variant="glass" className="absolute left-2 top-2">
+            <Badge variant="glass" className="absolute bottom-2 left-2">
               {product.category.name}
             </Badge>
           )}

@@ -1,4 +1,4 @@
-﻿"""Analytics endpoints for the admin dashboard."""
+"""Analytics endpoints for the admin dashboard."""
 from datetime import timedelta
 
 from django.db.models import Count, F, Sum

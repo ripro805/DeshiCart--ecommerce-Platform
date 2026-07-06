@@ -1,4 +1,4 @@
-﻿"""Staff/admin wishlist routes (mounted at /api/wishlist/)."""
+"""Staff/admin wishlist routes (mounted at /api/admin/wishlist/)."""
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 

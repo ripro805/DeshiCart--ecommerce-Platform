@@ -16,7 +16,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        if self.request.user.is_admin_user:
+        if self.request.user.is_staff:
             return Wishlist.objects.all().select_related("user").prefetch_related("items__product")
         return Wishlist.objects.filter(user=self.request.user).select_related("user").prefetch_related("items__product")
 
@@ -25,20 +25,20 @@ class WishlistViewSet(viewsets.ModelViewSet):
 
     def update(self, request, *args, **kwargs):
         wishlist = self.get_object()
-        if wishlist.user_id != request.user.id and not request.user.is_admin_user:
+        if wishlist.user_id != request.user.id and not request.user.is_staff:
             return api_response(None, message="Forbidden.", success=False, http_status=drf_status.HTTP_403_FORBIDDEN)
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         wishlist = self.get_object()
-        if wishlist.user_id != request.user.id and not request.user.is_admin_user:
+        if wishlist.user_id != request.user.id and not request.user.is_staff:
             return api_response(None, message="Forbidden.", success=False, http_status=drf_status.HTTP_403_FORBIDDEN)
         return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=["post"], url_path="items")
     def add_item(self, request, pk=None):
         wishlist = self.get_object()
-        if wishlist.user_id != request.user.id and not request.user.is_admin_user:
+        if wishlist.user_id != request.user.id and not request.user.is_staff:
             return api_response(None, message="Forbidden.", success=False, http_status=drf_status.HTTP_403_FORBIDDEN)
         product_id = request.data.get("product_id")
         if not product_id:
@@ -54,7 +54,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["delete"], url_path=r"items/(?P<item_id>\d+)")
     def remove_item(self, request, pk=None, item_id=None):
         wishlist = self.get_object()
-        if wishlist.user_id != request.user.id and not request.user.is_admin_user:
+        if wishlist.user_id != request.user.id and not request.user.is_staff:
             return api_response(None, message="Forbidden.", success=False, http_status=drf_status.HTTP_403_FORBIDDEN)
         WishlistItem.objects.filter(wishlist=wishlist, pk=item_id).delete()
         return api_response(None, message="Removed.", http_status=drf_status.HTTP_204_NO_CONTENT)

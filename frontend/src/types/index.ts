@@ -162,8 +162,17 @@ export interface Payment {
 }
 
 export interface CheckoutResponse {
-  status: "SUCCESS" | "FAILED";
+  // Always present on the unified `/api/payment/checkout/` response.
+  // `id` / `order_id` mirror the created Order so the frontend can
+  // chain into a second `useInitiatePayment({ order_id })` call.
+  id?: number;
+  order_id?: number;
+  payment_id?: number;
+  status?: "PENDING" | "SUCCESS" | "FAILED" | string;
   gateway_url?: string;
+  transaction_id?: string;
+  amount?: string | number;
+  currency?: string;
   payment?: Payment;
   message?: string;
 }

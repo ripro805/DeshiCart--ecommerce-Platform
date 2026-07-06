@@ -2,15 +2,22 @@
 
 from __future__ import annotations
 
+import logging
+
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 
 from api.permissions import IsAdminReadOnlyForStaff
 from api.responses import api_response
+
+logger = logging.getLogger(__name__)
 
 from .models import Address
 from .serializers import (
@@ -164,11 +171,14 @@ class MeViewSet(viewsets.ViewSet):
         user = request.user
         from order.models import Order  # local import to avoid circulars
 
+        from django.db.models import Sum
+
         orders = Order.objects.filter(user=user)
+        total_spent = orders.aggregate(total=Sum("total_price"))["total"] or 0
         data = {
             "user": UserSerializer(user).data,
             "orders_count": orders.count(),
-            "orders_total": float(sum(o.total_amount for o in orders)) if orders.exists() else 0.0,
+            "orders_total": float(total_spent),
             "addresses_count": Address.objects.filter(user=user).count(),
             "wishlist_count": _safe_wishlist_count(user),
         }
@@ -182,3 +192,25 @@ def _safe_wishlist_count(user) -> int:
         return Wishlist.objects.filter(user=user).count()
     except Exception:
         return 0
+
+
+class LogoutView(APIView):
+    """Blacklist the supplied refresh token so it can no longer mint access
+    tokens. Frontend calls this from ``useAuth.logout``; if the token is
+    missing/already-blacklisted we still return 200 � the local store has
+    already cleared the cookies at that point."""
+
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh = (request.data or {}).get('refresh') if isinstance(request.data, dict) else None
+        if refresh:
+            try:
+                token = RefreshToken(refresh)
+                token.blacklist()
+            except TokenError:
+                # Already invalid/blacklisted � treat as success.
+                pass
+            except Exception:
+                logger.exception('logout: unexpected error blacklisting refresh token')
+        return api_response({'detail': 'logged out'})

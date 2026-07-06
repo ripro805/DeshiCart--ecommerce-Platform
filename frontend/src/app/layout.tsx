@@ -33,9 +33,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="min-h-screen">{children}</main>
           <Footer />
           <Toaster
-            position="bottom-right"
+            position="top-center"
+            expand
+            richColors
+            closeButton
             toastOptions={{
-              className: "rounded-2xl border border-ink-200/60 bg-white/90 backdrop-blur-xl shadow-elev dark:border-ink-800/60 dark:bg-ink-950/90",
+              className: "rounded-2xl border border-ink-200/60 bg-white text-ink-900 shadow-elev-lg dark:border-ink-800/60 dark:bg-ink-900 dark:text-ink-50",
+              descriptionClassName: "text-ink-600 dark:text-ink-300",
             }}
           />
         </QueryProvider>

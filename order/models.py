@@ -26,22 +26,49 @@ class CartItem(models.Model):
 # Order and OrderItem models
 class Order(models.Model):
 	NOT_PAID = 'NOT PAID'
+	PAID = 'PAID'
+	PROCESSING = 'PROCESSING'
 	READY_TO_SHIP = 'READY TO SHIP'
+	TRANSIT = 'TRANSIT'
 	SHIPPED = 'SHIPPED'
 	DELIVERED = 'DELIVERED'
+	COMPLETED = 'COMPLETED'
 	CANCELLED = 'CANCELLED'
+	REJECT = 'REJECT'
+	REFUNDED = 'REFUNDED'
 
 	STATUS_CHOICES = [
 		(NOT_PAID, 'Not Paid'),
+		(PAID, 'Paid'),
+		(PROCESSING, 'Processing'),
 		(READY_TO_SHIP, 'Ready to Ship'),
+		(TRANSIT, 'In Transit'),
 		(SHIPPED, 'Shipped'),
 		(DELIVERED, 'Delivered'),
+		(COMPLETED, 'Completed'),
 		(CANCELLED, 'Cancelled'),
+		(REJECT, 'Rejected'),
+		(REFUNDED, 'Refunded'),
 	]
-	# id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='order')
+	user = models.ForeignKey(
+    User,
+    # Security 1 audit fix: PROTECT order history from accidental delete.
+    # Use the admin block/unblock + is_active toggle to retire an account
+    # instead of deleting the User row.
+    on_delete=models.PROTECT,
+    related_name="orders",
+)
 	status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=NOT_PAID)
 	total_price = models.DecimalField(max_digits=10, decimal_places=2)
+	shipping_address = models.TextField(blank=True, default="")
+	notes = models.TextField(blank=True, default="")
+	address = models.ForeignKey(
+		'users.Address',
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		related_name='orders',
+	)
 	created_at = models.DateTimeField(auto_now_add=True)
 	updated_at = models.DateTimeField(auto_now=True)
 
@@ -65,6 +92,8 @@ class Payment(models.Model):
     FAILED = 'FAILED'
     CANCELLED = 'CANCELLED'
     VALIDATED = 'VALIDATED'
+    REFUND_PENDING = 'REFUND_PENDING'
+    REFUNDED = 'REFUNDED'
 
     STATUS_CHOICES = [
         (PENDING, 'Pending'),
@@ -72,6 +101,8 @@ class Payment(models.Model):
         (FAILED, 'Failed'),
         (CANCELLED, 'Cancelled'),
         (VALIDATED, 'Validated'),
+        (REFUND_PENDING, 'Refund Pending'),
+        (REFUNDED, 'Refunded'),
     ]
 
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='payment')

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { getErrorMessage } from "@/lib/utils";
 
 export default function RegisterPage() {
@@ -70,11 +71,11 @@ export default function RegisterPage() {
         </div>
         <div>
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" autoComplete="new-password" required minLength={8} value={form.password} onChange={update("password")} />
+          <PasswordInput id="password" autoComplete="new-password" required minLength={8} value={form.password} onChange={update("password")} />
         </div>
         <div>
           <Label htmlFor="re_password">Confirm password</Label>
-          <Input id="re_password" type="password" autoComplete="new-password" required minLength={8} value={form.re_password} onChange={update("re_password")} />
+          <PasswordInput id="re_password" autoComplete="new-password" required minLength={8} value={form.re_password} onChange={update("re_password")} />
         </div>
         <Button type="submit" loading={submitting} className="w-full">Create account</Button>
       </form>

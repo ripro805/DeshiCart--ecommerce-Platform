@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -9,15 +9,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Price } from "@/components/ui/price";
 import { useOrder, useCancelOrder } from "@/hooks/useOrders";
-import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, PAYMENT_STATUS_COLORS } from "@/lib/constants";
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, PAYMENT_STATUS_LABELS, PAYMENT_STATUS_COLORS, CANCELLABLE_ORDER_STATUSES } from "@/lib/constants";
 import { formatDate, getErrorMessage } from "@/lib/utils";
 
 interface Props {
-  params: Promise<{ id: string }>;
+  params: { id: string };
 }
 
 export default function OrderDetailPage({ params }: Props) {
-  const { id } = use(params);
+  const { id } = params;
   const router = useRouter();
   const { data: order, isLoading } = useOrder(id);
   const cancelMutation = useCancelOrder();
@@ -50,7 +50,7 @@ export default function OrderDetailPage({ params }: Props) {
     );
   }
 
-  const canCancel = order.status === "PENDING" || order.status === "CONFIRMED";
+  const canCancel = !!order.status && CANCELLABLE_ORDER_STATUSES.has(order.status);
 
   return (
     <div className="space-y-6">
@@ -71,7 +71,7 @@ export default function OrderDetailPage({ params }: Props) {
             </span>
             {order.payment && (
               <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${PAYMENT_STATUS_COLORS[order.payment.status]}`}>
-                Payment: {order.payment.status}
+                Payment: {PAYMENT_STATUS_LABELS[order.payment.status] ?? order.payment.status}
               </span>
             )}
           </div>

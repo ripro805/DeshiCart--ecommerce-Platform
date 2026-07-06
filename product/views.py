@@ -212,11 +212,39 @@ class AdminReviewViewSet(ModelViewSet):
 
 
 class ReviewViewSet(ModelViewSet):
+    """Storefront reviews scoped to a single product via ``product_pk``.
+
+    Bug 3 fix: drop the dead lowercase role-string branch and gate staff
+    visibility via Django auth flags (``is_staff`` / ``is_superuser``).
+    Security 3 fix: enforce verified-purchase in ``perform_create`` --
+    a reviewer may only set ``verified_purchase=True`` if they have a
+    DELIVERED order line for the product. Unverified reviews are still
+    accepted and persisted with ``verified_purchase=False``.
+    """
     serializer_class = ReviewSerializer
     permission_classes = [IsReviewAuthorOrReadonly]
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        product_id = self.kwargs.get("product_pk")
+        user = self.request.user
+        verified = bool(serializer.validated_data.get("verified_purchase", False))
+
+        if verified:
+            from order.models import Order
+
+            actually_purchased = Order.objects.filter(
+                user=user,
+                items__product_id=product_id,
+                status=Order.DELIVERED,
+            ).exists()
+            if not actually_purchased:
+                from rest_framework.exceptions import PermissionDenied
+
+                raise PermissionDenied(
+                    "verified_purchase=True requires a delivered order for this product."
+                )
+
+        serializer.save(user=self.request.user, verified_purchase=verified)
 
     def perform_update(self, serializer):
         serializer.save(user=self.request.user)
@@ -225,26 +253,20 @@ class ReviewViewSet(ModelViewSet):
         """Storefront visibility:
         - Anonymous / non-staff: only APPROVED reviews
         - Authors of the review: their own reviews (any status)
-        - Staff / admin (IsAdmin): all reviews for moderation
+        - Staff / superuser: all reviews for moderation
         """
-        qs = Review.objects.filter(product_id=self.kwargs['product_pk']).select_related('user', 'product')
+        qs = Review.objects.filter(product_id=self.kwargs["product_pk"]).select_related("user", "product")
         user = self.request.user
+        if user and user.is_authenticated and (
+            getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
+        ):
+            return qs
         if user and user.is_authenticated:
-            # Staff / superuser / admin role see everything
-            if (
-                getattr(user, 'is_staff', False)
-                or getattr(user, 'is_superuser', False)
-                or getattr(user, 'role', None) in {'admin', 'staff', 'superadmin'}
-            ):
-                return qs
-            # Authors can see their own non-approved reviews
-            return qs.filter(
-                Q(status='APPROVED') | Q(user=user)
-            )
-        return qs.filter(status='APPROVED')
+            return qs.filter(Q(status="APPROVED") | Q(user=user))
+        return qs.filter(status="APPROVED")
 
     def get_serializer_context(self):
-        return {'product_id': self.kwargs['product_pk']}
+        return {"product_id": self.kwargs["product_pk"]}
 
 
 class ProductStatsView(APIView):

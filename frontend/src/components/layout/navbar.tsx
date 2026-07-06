@@ -17,6 +17,8 @@ import {
   Heart,
   LogIn,
   LayoutGrid,
+  Bell,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
@@ -26,6 +28,7 @@ import { useCartStore, cartItemCount } from "@/store/cart";
 import { useAuthStore } from "@/store/auth";
 import { useThemeStore } from "@/store/theme";
 import { cn, getInitials } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 
 const NAV_LINKS = [
@@ -50,7 +53,13 @@ export function Navbar() {
   const accessToken = useAuthStore((s) => s.accessToken);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isAuth = !!accessToken;
-  const clearAuth = () => {
+  const { logout } = useAuth();
+  const clearAuth = async () => {
+    try {
+      await logout();
+    } catch {
+      // Even if the server call fails, we still clear locally so the user is logged out.
+    }
     useAuthStore.getState().clear();
     router.push("/login");
   };
@@ -239,10 +248,14 @@ function UserMenu({ user, onSignOut }: { user: ReturnType<typeof useAuthStore.ge
               <p className="text-xs text-ink-500 truncate">{user?.email}</p>
             </div>
             <div className="my-1 h-px bg-ink-200/60 dark:bg-ink-800" />
-            <MenuLink href="/account"      icon={<User className="h-4 w-4" />}    label="Account" />
-            <MenuLink href="/account/orders" icon={<Package className="h-4 w-4" />} label="Orders" />
-            <MenuLink href="/account/wishlist" icon={<Heart className="h-4 w-4" />}  label="Wishlist" />
-            {isAdmin && <MenuLink href="/admin/dashboard" icon={<LayoutGrid className="h-4 w-4" />} label={adminLabel} />}
+<MenuLink href="/account"             icon={<User className="h-4 w-4" />}         label="My Profile" />
+            <MenuLink href="/account/orders"      icon={<Package className="h-4 w-4" />}     label="My Orders" />
+            <MenuLink href="/account/wishlist"    icon={<Heart className="h-4 w-4" />}       label="Wishlist" />
+            <MenuLink href="/account/notifications" icon={<Bell className="h-4 w-4" />}      label="Notifications" />
+            <MenuLink href="/account/settings"    icon={<Settings className="h-4 w-4" />}    label="Settings" />
+            {isAdmin && (
+              <MenuLink href="/admin/dashboard"   icon={<LayoutGrid className="h-4 w-4" />}  label={adminLabel} />
+            )}
             <div className="my-1 h-px bg-ink-200/60 dark:bg-ink-800" />
             <button
               onClick={() => { setOpen(false); onSignOut(); }}
@@ -311,8 +324,11 @@ function MobileMenu({ open, onClose, isAuth, user, onSignOut }: {
           {isAuth ? (
             <>
               <p className="px-4 text-xs uppercase tracking-wide text-ink-400">Hello, {user?.first_name || user?.email}</p>
-              <Link href="/account"        className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">Account</Link>
-              <Link href="/account/orders" className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">Orders</Link>
+              <Link href="/account"             className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">My Profile</Link>
+              <Link href="/account/orders"      className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">My Orders</Link>
+              <Link href="/account/wishlist"    className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">Wishlist</Link>
+              <Link href="/account/notifications" className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">Notifications</Link>
+              <Link href="/account/settings"    className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">Settings</Link>
               {isAdmin && <Link href="/admin/dashboard" className="block rounded-2xl px-4 py-3 font-medium hover:bg-ink-100 dark:hover:bg-ink-900">{user?.is_superuser ? "Super Admin Panel" : "Staff Admin Panel"}</Link>}
               <button onClick={onSignOut} className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 font-medium text-danger hover:bg-ink-100 dark:hover:bg-ink-900">
                 <LogOut className="h-4 w-4" /> Sign out

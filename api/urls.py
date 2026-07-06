@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from product.product_urls import urlpatterns as product_urlpatterns
 from product.categories_urls import urlpatterns as category_urlpatterns
-from users.views import UserViewSet, AddressViewSet, MeViewSet
+from users.views import UserViewSet, AddressViewSet, MeViewSet, LogoutView
 
 router = DefaultRouter()
 router.register("admin/users", UserViewSet, basename="admin-users")
@@ -20,6 +20,7 @@ urlpatterns = [
     path("", include("order.urls")),
     path("auth/", include("djoser.urls")),
     path("auth/", include("djoser.urls.jwt")),
+    path("auth/jwt/logout/", LogoutView.as_view(), name="jwt-logout"),
     path("customer/me/", me_list, name="customer-me"),
     path("customer/me/change-password/", me_password, name="customer-me-password"),
     path("customer/me/dashboard/", me_dashboard, name="customer-me-dashboard"),
@@ -39,7 +40,7 @@ urlpatterns = [
     path("reports/", include("reports.urls")),
     path("content/", include("content.urls")),
     path("customer/", include("wishlist.urls")),
-    path("wishlist/", include("wishlist.admin_urls")),
+    path("admin/wishlist/", include("wishlist.admin_urls")),
     path("customer/", include("coupons.customer_urls")),
     path("customer/", include("notifications_app.customer_urls")),
     path("customer/", include("marketing.customer_urls")),

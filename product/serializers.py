@@ -96,6 +96,44 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Name must be at least 3 characters.")
         return value
 
+    def validate_gallery(self, value):
+        """Gallery must be a list of {url: str, alt: str} objects.
+
+        Defaults to an empty list when the field is absent so callers can
+        omit the key entirely instead of sending ``[]``.
+        """
+        if value in (None, ""):
+            return []
+        if not isinstance(value, list):
+            raise serializers.ValidationError("gallery must be a list.")
+        cleaned = []
+        for idx, item in enumerate(value):
+            if not isinstance(item, dict):
+                raise serializers.ValidationError(
+                    f"gallery[{idx}] must be an object with 'url' and 'alt'."
+                )
+            url = item.get("url")
+            alt = item.get("alt", "")
+            if not isinstance(url, str) or not url:
+                raise serializers.ValidationError(
+                    f"gallery[{idx}].url must be a non-empty string."
+                )
+            if not isinstance(alt, str):
+                raise serializers.ValidationError(
+                    f"gallery[{idx}].alt must be a string."
+                )
+            cleaned.append({"url": url, "alt": alt})
+        return cleaned
+
+    def validate_specifications(self, value):
+        """Specifications must be an object mapping string keys to JSON-ish
+        scalars/objects. Anything else is rejected."""
+        if value in (None, ""):
+            return {}
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("specifications must be an object.")
+        return value
+
     # def validate(self, attrs):
     #     price = attrs.get('price', 0)
     #     stock = attrs.get('stock', 0)
@@ -150,10 +188,33 @@ class SubCategorySerializer(serializers.ModelSerializer):
 
 
 class BrandSerializer(serializers.ModelSerializer):
+    # Brand model exposes ``logo`` (URLField). A ``logo_url`` alias is
+    # provided via SerializerMethodField so DRF never ghosts an attribute
+    # that does not exist on the model.
+    logo_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Brand
-        fields = ("id", "name", "slug", "logo", "logo_url", "description", "is_active", "created_at", "updated_at")
+        fields = (
+            "id",
+            "name",
+            "slug",
+            "logo",
+            "logo_url",
+            "description",
+            "is_active",
+            "created_at",
+            "updated_at",
+        )
         read_only_fields = ("created_at", "updated_at")
+
+    def get_logo_url(self, obj):
+        if not obj.logo:
+            return None
+        request = self.context.get("request")
+        if request is not None:
+            return request.build_absolute_uri(obj.logo)
+        return obj.logo
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -249,6 +310,38 @@ class AdminProductSerializer(serializers.ModelSerializer):
     def get_review_count(self, product):
         return product.reviews.count()
 
+    def validate_gallery(self, value):
+        """Same gallery shape contract as the storefront serializer."""
+        if value in (None, ""):
+            return []
+        if not isinstance(value, list):
+            raise serializers.ValidationError("gallery must be a list.")
+        cleaned = []
+        for idx, item in enumerate(value):
+            if not isinstance(item, dict):
+                raise serializers.ValidationError(
+                    f"gallery[{idx}] must be an object with 'url' and 'alt'."
+                )
+            url = item.get("url")
+            alt = item.get("alt", "")
+            if not isinstance(url, str) or not url:
+                raise serializers.ValidationError(
+                    f"gallery[{idx}].url must be a non-empty string."
+                )
+            if not isinstance(alt, str):
+                raise serializers.ValidationError(
+                    f"gallery[{idx}].alt must be a string."
+                )
+            cleaned.append({"url": url, "alt": alt})
+        return cleaned
+
+    def validate_specifications(self, value):
+        """Same specifications shape contract as the storefront serializer."""
+        if value in (None, ""):
+            return {}
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("specifications must be an object.")
+        return value
 
 class AdminReviewSerializer(serializers.ModelSerializer):
     user_email = serializers.CharField(source="user.email", read_only=True)

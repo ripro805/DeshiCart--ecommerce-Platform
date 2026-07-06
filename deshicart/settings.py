@@ -1,7 +1,8 @@
-﻿"""
+"""
 Django settings for deshicart project.
 """
 
+import os
 from pathlib import Path
 from datetime import timedelta
 
@@ -9,7 +10,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-_-sw+995f4t48rwyxucty93nmor3r&u0(secce*$8+36=xcv3-'
 DEBUG = True
-ALLOWED_HOSTS = []
+# Local dev + tests. In production these MUST come from environment.
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+    "testserver",
+    "0.0.0.0",
+]
 AUTH_USER_MODEL = 'users.User'
 
 INSTALLED_APPS = [
@@ -22,6 +30,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'djoser',
+    'rest_framework_simplejwt.token_blacklist',
     'api',
     'product',
     'users',
@@ -114,6 +123,9 @@ SIMPLE_JWT = {
     # Accept both modern "Bearer" and legacy "JWT" prefixes.
     'AUTH_HEADER_TYPES': ('Bearer', 'JWT'),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=7),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
 }
 
 DJOSER = {
@@ -124,15 +136,25 @@ DJOSER = {
     },
 }
 
+# Public origin that SSLCommerz should redirect/POST back to. Must be
+# reachable from the sandbox — for local dev we accept http://localhost:8000
+# but the caller can override with ``SSLCOMMERZ_BACKEND_URL`` (e.g.
+# ``https://api.example.com`` in production).
+_BACKEND_URL = os.environ.get('SSLCOMMERZ_BACKEND_URL', 'http://localhost:8000').rstrip('/')
+
 SSLCOMMERZ = {
-    'STORE_ID': 'deshi6a43dadb57717',
-    'STORE_PASSWD': 'deshi6a43dadb57717@ssl',
-    'IS_SANDBOX': True,
+    'STORE_ID': os.environ.get('SSLCOMMERZ_STORE_ID', 'deshi6a43dadb57717'),
+    'STORE_PASSWD': os.environ.get('SSLCOMMERZ_STORE_PASSWD', 'deshi6a43dadb57717@ssl'),
+    'IS_SANDBOX': os.environ.get('SSLCOMMERZ_IS_SANDBOX', 'true').lower() in ('true', '1', 'yes'),
     'CURRENCY': 'BDT',
-    'SUCCESS_URL': '/api/payment/success/',
-    'FAIL_URL': '/api/payment/fail/',
-    'CANCEL_URL': '/api/payment/cancel/',
-    'IPN_URL': '/api/payment/ipn/',
+    # SSLCommerz redirects the customer's browser (and posts IPN) to these
+    # absolute URLs. Relative paths would be joined onto the sandbox host
+    # and 404 against ``sandbox.sslcommerz.com``.
+    'SUCCESS_URL': f'{_BACKEND_URL}/api/payment/success/',
+    'FAIL_URL':    f'{_BACKEND_URL}/api/payment/fail/',
+    'CANCEL_URL':  f'{_BACKEND_URL}/api/payment/cancel/',
+    'IPN_URL':     f'{_BACKEND_URL}/api/payment/ipn/',
+    'BACKEND_URL': _BACKEND_URL,
     'FRONTEND_BASE_URL': 'http://localhost:3000',
 }
 

@@ -33,7 +33,11 @@ export const useCartStore = create<CartState>()(
       async fetch() {
         set({ isLoading: true });
         try {
-          const { data } = await api.get<Cart | Cart[] | { results?: Cart[] }>("/carts/");
+          // POST /carts/ is idempotent on the backend (returns the user's
+          // existing cart or creates one).  We use it as a "fetch-or-create"
+          // RPC — GET /carts/ would return 405 because the list endpoint is
+          // not implemented as a true list (a user has at most one cart).
+          const { data } = await api.post<Cart | Cart[] | { results?: Cart[] }>("/carts/", {});
           let cart: Cart | null = null;
           if (Array.isArray(data)) {
             cart = data[0] ?? null;

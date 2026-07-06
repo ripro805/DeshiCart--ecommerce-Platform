@@ -82,3 +82,17 @@ class IsAdminReadOnlyForStaff(BasePermission):
         if user.is_superuser:
             return True
         return request.method in SAFE_METHODS
+
+class IsNotStaff(BasePermission):
+    """Customers only - staff and admins are rejected.
+
+    Use on /api/customer/* routes to ensure staff cannot shop or impersonate.
+    """
+
+    message = "Staff and admin users cannot access customer endpoints."
+
+    def has_permission(self, request, view):
+        user = getattr(request, "user", None)
+        if not (user and user.is_authenticated):
+            return False
+        return not (getattr(user, "is_staff", False) or getattr(user, "is_superuser", False))

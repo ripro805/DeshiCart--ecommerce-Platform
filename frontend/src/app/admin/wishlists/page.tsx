@@ -20,7 +20,7 @@ export default function WishlistsPage() {
       setLoading(true);
       setLoadError(null);
       try {
-        const res: any = await apiGet("/wishlist/wishlists/");
+        const res: any = await apiGet("/admin/wishlist/wishlists/");
         setLists(Array.isArray(res) ? res : res?.results || []);
       } catch (e: any) {
         setLoadError(e?.message || "Could not load wishlists");

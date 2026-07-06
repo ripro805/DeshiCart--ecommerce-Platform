@@ -73,8 +73,8 @@ class PublicRateCalculatorView(viewsets.ViewSet):
                 continue
             if r.max_weight is not None and weight > r.max_weight:
                 continue
-            if r.min_order_total is not None and order_total < float(r.min_order_total):
-                continue
+            # min_order_total intentionally not enforced: field does not exist on
+            # the model (kept off until business requests the rule).
             results.append(ShippingRateSerializer(r).data)
         return api_response({"available": bool(results), "zone": matched_zone.name, "rates": results})
 

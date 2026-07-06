@@ -27,11 +27,23 @@ class AdminAppearanceViewSet(viewsets.ModelViewSet):
         return api_response(AppearanceSerializer(obj).data)
 
     def retrieve(self, request, pk=None, *args, **kwargs):
+        # Appearance is a singleton — only the existing row's PK is valid.
+        # Reject anything else with 404 so the route's PK semantics are honest.
         obj = _get_singleton()
+        if pk is not None and int(pk) != obj.pk:
+            return api_response(
+                {"detail": "Appearance is a singleton; only the existing row is addressable."},
+                http_status=drf_status.HTTP_404_NOT_FOUND,
+            )
         return api_response(AppearanceSerializer(obj).data)
 
     def update(self, request, pk=None, *args, **kwargs):
         obj = _get_singleton()
+        if pk is not None and int(pk) != obj.pk:
+            return api_response(
+                {"detail": "Appearance is a singleton; only the existing row is addressable."},
+                http_status=drf_status.HTTP_404_NOT_FOUND,
+            )
         ser = AppearanceSerializer(obj, data=request.data, partial=False)
         ser.is_valid(raise_exception=True)
         ser.save()
@@ -39,6 +51,11 @@ class AdminAppearanceViewSet(viewsets.ModelViewSet):
 
     def partial_update(self, request, pk=None, *args, **kwargs):
         obj = _get_singleton()
+        if pk is not None and int(pk) != obj.pk:
+            return api_response(
+                {"detail": "Appearance is a singleton; only the existing row is addressable."},
+                http_status=drf_status.HTTP_404_NOT_FOUND,
+            )
         ser = AppearanceSerializer(obj, data=request.data, partial=True)
         ser.is_valid(raise_exception=True)
         ser.save()

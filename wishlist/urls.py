@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from .views import WishlistViewSet
 
 router = DefaultRouter()
-router.register("", WishlistViewSet, basename="wishlists")
+router.register("wishlists", WishlistViewSet, basename="customer-wishlists")
 
 urlpatterns = [
     path("", include(router.urls)),

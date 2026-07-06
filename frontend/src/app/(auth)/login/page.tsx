@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Input, Label } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { getErrorMessage } from "@/lib/utils";
 
 export default function LoginPage() {
@@ -19,9 +20,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     setSubmitting(true);
     try {
       await login(email, password);
@@ -40,6 +43,7 @@ export default function LoginPage() {
       const msg =
         (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ||
         "Invalid email or password";
+      setFormError(msg);
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -58,6 +62,22 @@ export default function LoginPage() {
       <p className="mt-2 text-sm text-ink-500">Welcome back. Enter your details to continue.</p>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
+        {formError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25 }}
+            role="alert"
+            aria-live="polite"
+            className="flex items-start gap-3 rounded-xl border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger"
+          >
+            <span className="mt-0.5 inline-flex h-5 w-5 flex-none items-center justify-center rounded-full bg-danger/20 text-danger">!</span>
+            <div>
+              <p className="font-semibold">Sign-in failed</p>
+              <p className="text-danger/80">{formError}</p>
+            </div>
+          </motion.div>
+        )}
         <div>
           <Label htmlFor="email">Email</Label>
           <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -67,7 +87,7 @@ export default function LoginPage() {
             <Label htmlFor="password">Password</Label>
             <Link href="/forgot-password" className="text-xs text-accent hover:underline">Forgot?</Link>
           </div>
-          <Input id="password" type="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
+          <PasswordInput id="password" autoComplete="current-password" required value={password} onChange={(e) => setPassword(e.target.value)} />
         </div>
         <Button type="submit" loading={submitting} className="w-full">Sign in</Button>
       </form>
