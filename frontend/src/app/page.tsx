@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, ShieldCheck, Truck, Zap } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ProductGrid } from "@/components/product/product-grid";
+import { HeroSlider } from "@/components/hero-slider";
+import { BrandTicker } from "@/components/brand-ticker";
 import { useCategories, useProducts } from "@/hooks/useProducts";
 
 export default function HomePage() {
@@ -16,69 +16,19 @@ export default function HomePage() {
 
   return (
     <>
-      {/* HERO */}
-      <section className="relative overflow-hidden">
-        {/* Decorative gradient blobs */}
-        <div className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute -top-32 left-1/2 h-[800px] w-[800px] -translate-x-1/2 rounded-full bg-gradient-to-br from-primary/30 via-accent/20 to-transparent blur-3xl dark:from-primary/20 dark:via-accent/10" />
-          <div className="absolute right-0 top-1/4 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary-400/15 to-transparent blur-3xl dark:from-primary-400/10" />
-          <div className="absolute bottom-0 left-0 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-accent/15 to-transparent blur-3xl dark:from-accent/10" />
-        </div>
+      {/* HERO SLIDER */}
+      <HeroSlider />
 
-        <Container className="pt-20 pb-32 sm:pt-32 sm:pb-40">
-          <div className="mx-auto max-w-3xl text-center">
-            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <Badge variant="glass" className="mb-6">
-                <Sparkles className="h-3 w-3" /> Now delivering nationwide
-              </Badge>
-            </motion.div>
+      {/* BRAND TICKER */}
+      <BrandTicker />
 
-            <motion.h1
-              className="text-display-2xl text-balance text-ink-900 dark:text-white"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.1, ease: [0.28, 0.11, 0.32, 1] }}
-            >
-              Shop premium.<br />
-              <span className="bg-gradient-to-br from-primary via-primary-500 to-accent bg-clip-text text-transparent">
-                Made in Bangladesh.
-              </span>
-            </motion.h1>
-
-            <motion.p
-              className="mx-auto mt-6 max-w-2xl text-balance text-lg text-ink-500 dark:text-ink-300"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2, ease: [0.28, 0.11, 0.32, 1] }}
-            >
-              DeshiCart brings together the finest local craftsmanship and global brands —
-              delivered fast, with a checkout you&apos;ll actually enjoy.
-            </motion.p>
-
-            <motion.div
-              className="mt-10 flex flex-wrap items-center justify-center gap-3"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: [0.28, 0.11, 0.32, 1] }}
-            >
-              <Link href="/products">
-                <Button size="lg">Shop now <ArrowRight className="h-4 w-4" /></Button>
-              </Link>
-              <Link href="/categories">
-                <Button size="lg" variant="glass">Browse categories</Button>
-              </Link>
-            </motion.div>
-
-            <motion.div
-              className="mt-16 grid grid-cols-1 gap-4 sm:grid-cols-3"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.4, ease: [0.28, 0.11, 0.32, 1] }}
-            >
-              <FeatureCard icon={<Truck className="h-5 w-5" />} title="Free shipping" subtitle="On orders over ৳2,000" />
-              <FeatureCard icon={<ShieldCheck className="h-5 w-5" />} title="Secure checkout" subtitle="SSLCommerz protected" />
-              <FeatureCard icon={<Zap className="h-5 w-5" />} title="Fast support" subtitle="7 days a week" />
-            </motion.div>
+      {/* VALUE PROPS */}
+      <section>
+        <Container className="py-10 sm:py-14">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <FeatureCard icon={<Truck className="h-5 w-5" />} title="Free shipping" subtitle="On orders over ৳2,000" />
+            <FeatureCard icon={<ShieldCheck className="h-5 w-5" />} title="Secure checkout" subtitle="SSLCommerz protected" />
+            <FeatureCard icon={<Zap className="h-5 w-5" />} title="Fast support" subtitle="7 days a week" />
           </div>
         </Container>
       </section>
