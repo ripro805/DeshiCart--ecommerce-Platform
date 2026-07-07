@@ -63,7 +63,7 @@ export default function CouponsPage() {
             icon={TicketPercent}
             title="No coupons yet"
             description="Create your first promotional code to drive conversions."
-            action={{ label: "New Coupon", href: "/admin/coupons/new" }}
+            action={<Link href="/admin/coupons/new" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"><Plus className="h-4 w-4" />New Coupon</Link>}
           />
         </div>
       ) : (

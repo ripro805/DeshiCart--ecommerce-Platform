@@ -65,6 +65,7 @@ type ProductStats = {
   low_stock: number;
   out_of_stock: number;
   average_price: number;
+  low_stock_threshold?: number;
   by_category?: { id: number; name: string; count: number }[];
 };
 
@@ -688,7 +689,7 @@ export default function AdminInventoryPage() {
           />
         ) : filteredLowStock.length === 0 ? (
           <EmptyState
-            icon={<CheckCircle2 className="h-6 w-6 text-emerald-500" />}
+            icon={CheckCircle2}
             title="Nothing low on stock"
             description={
               lowSearch.trim()

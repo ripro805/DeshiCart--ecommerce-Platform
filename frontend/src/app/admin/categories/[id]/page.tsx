@@ -167,9 +167,7 @@ export default function CategoryDetailPage() {
       fd.append("is_active", active ? "true" : "false");
       if (parent) fd.append("parent", parent);
       if (imageFile) fd.append("image", imageFile);
-      const res: any = await apiPatch(`/product/categories/${row.id}/`, fd, {
-        isForm: true,
-      });
+      const res: any = await apiPatch(`/product/categories/${row.id}/`, fd);
       setRow((r) =>
         r
           ? {
@@ -233,7 +231,7 @@ export default function CategoryDetailPage() {
     return (
       <ErrorState
         title="Couldn't load this category"
-        message={error || "Category not found."}
+        description={error || "Category not found."}
         onRetry={() => void load()}
       />
     );

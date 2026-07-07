@@ -6,16 +6,16 @@ import { Plus, Edit, Trash2, FileText } from "lucide-react";
 import { apiGet, apiDelete } from "@/lib/api";
 import { toast } from "@/components/admin/feedback/toast-store";
 import { useConfirm } from "@/components/admin/feedback/confirm-dialog";
-import { usePermission } from "@/components/admin/layout/role-guard";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/feedback/states";
 import { formatDate } from "@/lib/utils";
 
 export default function CMSPages() {
-  const { allowed, loading: permLoading } = usePermission("manage_cms");
+  const { allowed, loading: permLoading } = usePermissionState("manage_cms");
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const confirm = useConfirm();
+  const { ask, dialog: confirmDialog } = useConfirm();
 
   async function load() {
     setLoading(true);
@@ -36,7 +36,7 @@ export default function CMSPages() {
   }, [allowed]);
 
   async function del(p: any) {
-    const ok = await confirm({
+    const ok = await ask({
       title: "Delete this page?",
       description: `"${p.title}" will be permanently removed. This cannot be undone.`,
       confirmLabel: "Delete",
@@ -46,16 +46,16 @@ export default function CMSPages() {
     try {
       await apiDelete(`/cms/pages/${p.id}/`);
       setItems((xs) => xs.filter((x) => x.id !== p.id));
-      toast.success("Page deleted", p.title);
+      toast.success("Page deleted");
     } catch (e: any) {
       toast.error("Delete failed", e?.message || "Please try again");
     }
   }
 
   if (permLoading) return <LoadingState label="Checking permissions…" />;
-  if (!allowed) return <ErrorState title="Access denied" message="You need the manage_cms permission to view pages." />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need the manage_cms permission to view pages." />;
   if (loading) return <LoadingState label="Loading pages…" />;
-  if (loadError) return <ErrorState title="Couldn't load pages" message={loadError} />;
+  if (loadError) return <ErrorState title="Couldn't load pages" description={loadError} />;
 
   return (
     <div className="space-y-6">
@@ -82,7 +82,7 @@ export default function CMSPages() {
               icon={FileText}
               title="No pages yet"
               description="Create your first CMS page — About, Terms, Privacy, etc."
-              action={{ href: "/admin/cms/new", label: "New Page" }}
+              action={<Link href="/admin/cms/new" className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"><Plus className="h-4 w-4" />New Page</Link>}
             />
           </div>
         ) : (
@@ -148,6 +148,7 @@ export default function CMSPages() {
           </div>
         )}
       </section>
+      {confirmDialog}
     </div>
   );
 }

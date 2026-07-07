@@ -6,7 +6,7 @@ import {
   Megaphone, Image as ImageIcon, Mail, BarChart3, ArrowRight,
 } from "lucide-react";
 import { apiGet } from "@/lib/api";
-import { usePermission } from "@/components/admin/layout/role-guard";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
 import { ErrorState, LoadingState } from "@/components/admin/feedback/states";
 
 const TILES = [
@@ -41,7 +41,7 @@ const TILES = [
 ];
 
 export default function MarketingHub() {
-  const { allowed, loading: permLoading } = usePermission("manage_marketing");
+  const { allowed, loading: permLoading } = usePermissionState("manage_marketing");
   const [counts, setCounts] = useState<{ campaigns?: number; banners?: number; subscribers?: number }>({});
   const [loading, setLoading] = useState(true);
 
@@ -68,7 +68,7 @@ export default function MarketingHub() {
   }, [allowed]);
 
   if (permLoading) return <LoadingState label="Checking permissions…" />;
-  if (!allowed) return <ErrorState title="Access denied" message="You need the manage_marketing permission to view this page." />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need the manage_marketing permission to view this page." />;
 
   const stats = [
     { label: "Active Campaigns", value: counts.campaigns ?? 0, tile: 0 },

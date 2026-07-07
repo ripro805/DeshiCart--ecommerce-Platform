@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ProductGrid } from "@/components/product/product-grid";
 import { HeroSlider } from "@/components/hero-slider";
 import { BrandTicker } from "@/components/brand-ticker";
+import { DiscountSection } from "@/components/discount-section";
 import { useCategories, useProducts } from "@/hooks/useProducts";
 
 export default function HomePage() {
@@ -78,6 +79,9 @@ export default function HomePage() {
           <ProductGrid products={featured} loading={isLoading} empty="No products yet — check back soon." />
         </Container>
       </section>
+
+      {/* DISCOUNT SECTION */}
+      <DiscountSection />
     </>
   );
 }

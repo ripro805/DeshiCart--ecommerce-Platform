@@ -34,7 +34,7 @@ export function useOrder(id: number | string | undefined) {
 export function useCreateOrder() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { address_id?: number; address?: string; notes?: string } = {}) => {
+    mutationFn: async (payload: { address_id?: number; address?: string; notes?: string; coupon_code?: string } = {}) => {
       // Create goes through /api/carts/<cart_pk>/checkout/ flow:
       // 1. POST /api/carts/                -> ensure cart exists
       // 2. POST /api/carts/<id>/items/     -> add items (caller does this)

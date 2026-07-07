@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { apiPost } from "@/lib/api";
 import { toast } from "@/components/admin/feedback/toast-store";
-import { usePermission } from "@/components/admin/layout/role-guard";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
 import { ErrorState, LoadingState } from "@/components/admin/feedback/states";
 import { formatDate } from "@/lib/utils";
 
@@ -87,7 +87,7 @@ const inputClass =
 
 export default function NewCampaignPage() {
   const router = useRouter();
-  const { allowed, loading: permLoading } = usePermission("manage_marketing");
+  const { allowed, loading: permLoading } = usePermissionState("manage_marketing");
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -153,7 +153,7 @@ export default function NewCampaignPage() {
   }
 
   if (permLoading) return <LoadingState label="Checking permissions…" />;
-  if (!allowed) return <ErrorState title="Access denied" message="You need the manage_marketing permission to create campaigns." />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need the manage_marketing permission to create campaigns." />;
 
   const discountNum = Number(form.discount) || 0;
   const sampleOrders = [250, 500, 1000, 2500];

@@ -22,6 +22,7 @@ import {
 } from "@/components/admin/feedback/states";
 import { useConfirm } from "@/components/admin/feedback/confirm-dialog";
 import { usePermission } from "@/components/admin/layout/role-guard";
+import type { Paginated } from "@/types";
 
 /* ------------------------------------------------------------------------- */
 /*  Types                                                                    */
@@ -149,9 +150,9 @@ export default function NewProductPage() {
     setMetaError(null);
     try {
       const [catRes, brandRes, tagRes] = await Promise.all([
-        apiGet(`/categories/?page_size=200`).catch(() => []),
-        apiGet(`/admin/brands/?page_size=200`).catch(() => []),
-        apiGet(`/admin/tags/?page_size=200`).catch(() => []),
+        apiGet<Paginated<any>>(`/categories/?page_size=200`).catch(() => []),
+        apiGet<Paginated<any>>(`/admin/brands/?page_size=200`).catch(() => []),
+        apiGet<Paginated<any>>(`/admin/tags/?page_size=200`).catch(() => []),
       ]);
 
       const catList: Category[] = Array.isArray(catRes)
@@ -409,7 +410,7 @@ export default function NewProductPage() {
 
   if (metaError && categories.length === 0) {
     return (
-      <ErrorState message={metaError} onRetry={() => void loadMeta()} />
+      <ErrorState description={metaError} onRetry={() => void loadMeta()} />
     );
   }
 

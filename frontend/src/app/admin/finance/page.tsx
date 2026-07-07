@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { toast } from "@/components/admin/feedback/toast-store";
-import { usePermission } from "@/components/admin/layout/role-guard";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/admin/feedback/states";
 import { formatPrice, formatDate } from "@/lib/utils";
 
@@ -52,7 +52,7 @@ function Kpi({
 }
 
 export default function FinancePage() {
-  const { allowed, loading: permLoading } = usePermission("manage_finance");
+  const { allowed, loading: permLoading } = usePermissionState("manage_finance");
   const [summary, setSummary] = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,9 +80,9 @@ export default function FinancePage() {
   }, [allowed]);
 
   if (permLoading) return <LoadingState label="Checking permissions…" />;
-  if (!allowed) return <ErrorState title="Access denied" message="You need the manage_finance permission to view this page." />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need the manage_finance permission to view this page." />;
   if (loading) return <LoadingState label="Loading finance data…" />;
-  if (loadError) return <ErrorState title="Couldn't load finance" message={loadError} />;
+  if (loadError) return <ErrorState title="Couldn't load finance" description={loadError} />;
 
   const income  = Number(summary?.total_income   ?? summary?.total_revenue ?? 0);
   const expense = Number(summary?.total_expense  ?? summary?.total_payouts ?? 0);

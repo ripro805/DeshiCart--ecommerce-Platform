@@ -78,7 +78,16 @@ def _resolve_shipping_address(user):
 
 class OrderService:
     @staticmethod
-    def create_order(user_id, cart_id, shipping_address='', notes='', address_id=None):
+    def create_order(user_id, cart_id, shipping_address='', notes='', address_id=None, coupon_code=None):
+        """
+        Convert a user cart into an Order.
+
+        ``coupon_code`` (optional, str): when supplied, the code is looked up,
+        validated for active / within-window / within-max-use thresholds, and
+        the resulting discount is subtracted from ``total_price``. A matching
+        ``CouponUsage`` row is written so the coupon appears under "My coupons"
+        for the user. Invalid codes raise ``ValidationError``.
+        """
         with transaction.atomic():
             cart = Cart.objects.get(pk=cart_id)
             cart_items = list(cart.items.select_related('product').all())
@@ -110,6 +119,42 @@ class OrderService:
                 item.product.price * item.quantity for item in cart_items
             )
 
+            # Optional coupon application. We resolve and validate the code
+            # BEFORE writing the order so a bad code surfaces as a clean
+            # 400 from the checkout endpoint rather than leaving a half-built
+            # order in the DB.
+            discount_amount = Decimal("0")
+            applied_coupon = None
+            coupon_code = (coupon_code or "").strip().upper()
+            if coupon_code:
+                # Local import: Coupons app -> order app edge avoids Django
+                # app-loading ordering surprises during testing.
+                from coupons.models import Coupon, CouponUsage
+
+                try:
+                    applied_coupon = Coupon.objects.get(
+                        code=coupon_code, is_active=True
+                    )
+                except Coupon.DoesNotExist:
+                    raise ValidationError(
+                        {"coupon_code": "Invalid coupon code."}
+                    )
+                if not applied_coupon.is_valid:
+                    raise ValidationError(
+                        {"coupon_code": "Coupon is no longer valid."}
+                    )
+                if total_price < applied_coupon.min_order:
+                    raise ValidationError(
+                        {"coupon_code": f"Minimum order ৳{applied_coupon.min_order} required for this coupon."}
+                    )
+                if applied_coupon.discount_type == "PERCENT":
+                    discount_amount = (total_price * applied_coupon.value) / Decimal("100")
+                else:
+                    discount_amount = applied_coupon.value
+                # Never let the discount exceed the cart total.
+                discount_amount = min(discount_amount, total_price)
+                total_price = total_price - discount_amount
+
             # Resolve shipping text — if frontend didn't provide one, fall
             # back to the user's saved Address book entry.
             resolved_address_text = shipping_address or ''
@@ -137,6 +182,20 @@ class OrderService:
                 notes=notes or '',
                 address_id=address_id,
             )
+
+            # Record coupon usage AFTER the order exists so we can attach the
+            # CouponUsage FK to the order. Increment used_count atomically.
+            if applied_coupon is not None:
+                from coupons.models import CouponUsage
+                CouponUsage.objects.create(
+                    coupon=applied_coupon,
+                    user_id=user_id,
+                    order=order,
+                    discount_amount=discount_amount,
+                )
+                Coupon.objects.filter(pk=applied_coupon.pk).update(
+                    used_count=applied_coupon.used_count + 1
+                )
 
             order_items = [
                 OrderItem(

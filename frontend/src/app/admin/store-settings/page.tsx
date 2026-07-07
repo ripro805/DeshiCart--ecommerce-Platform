@@ -4,11 +4,11 @@ import { apiGet, apiPost } from "@/lib/api";
 import { useEffect, useState } from "react";
 import { Settings, Save, Loader2 } from "lucide-react";
 import { toast } from "@/components/admin/feedback/toast-store";
-import { usePermission } from "@/components/admin/layout/role-guard";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
 import { ErrorState, LoadingState } from "@/components/admin/feedback/states";
 
 export default function StoreSettingsPage() {
-  const { allowed, loading: permLoading } = usePermission("manage_store_settings");
+  const { allowed, loading: permLoading } = usePermissionState("manage_store_settings");
   const [form, setForm] = useState<any | null>(null);
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -74,7 +74,7 @@ export default function StoreSettingsPage() {
   }
 
   if (permLoading) return <LoadingState label="Checking permissions…" />;
-  if (!allowed) return <ErrorState title="Access denied" message="You need manage_store_settings to edit these." />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need manage_store_settings to edit these." />;
   if (!loaded || !form) return <LoadingState label="Loading settings…" />;
 
   return (

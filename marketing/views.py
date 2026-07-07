@@ -1,4 +1,5 @@
 """Marketing viewsets — banners, campaigns, newsletter."""
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status as drf_status, viewsets
 from rest_framework.decorators import action
@@ -43,24 +44,29 @@ class PublicBannerViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
+        """
+        Active banners within their display window.
+
+        Date filtering is pushed down to the database via Q() so expired /
+        not-yet-started banners are excluded by SQL (rather than loaded into
+        Python and filtered by the caller). A banner with NULL starts_at or
+        NULL ends_at is treated as "always valid" for that bound.
+        """
         now = timezone.now()
-        return Banner.objects.filter(is_active=True).filter(
-            **{}
-        ).filter(
-            # Always-valid if starts_at/ends_at is null
-        ).order_by("position", "order", "-created_at")
+        return (
+            Banner.objects.filter(is_active=True)
+            .filter(
+                Q(starts_at__isnull=True) | Q(starts_at__lte=now),
+                Q(ends_at__isnull=True) | Q(ends_at__gte=now),
+            )
+            .order_by("position", "order", "-created_at")
+        )
 
     def list(self, request, *args, **kwargs):
-        now = timezone.now()
         qs = self.get_queryset()
-        valid = []
-        for b in qs:
-            if b.starts_at and b.starts_at > now:
-                continue
-            if b.ends_at and b.ends_at < now:
-                continue
-            valid.append(b)
-        return api_response(BannerSerializer(valid, many=True, context={"request": request}).data)
+        return api_response(
+            BannerSerializer(qs, many=True, context={"request": request}).data
+        )
 
 
 class NewsletterSubscribeView(viewsets.ViewSet):

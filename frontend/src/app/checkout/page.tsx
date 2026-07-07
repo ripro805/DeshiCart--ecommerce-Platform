@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ShoppingBag, MapPin, CreditCard } from "lucide-react";
+import { ShoppingBag, MapPin, CreditCard, Tag, X } from "lucide-react";
 import { toast } from "sonner";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,32 @@ import { CartSummary } from "@/components/cart/cart-summary";
 import { useCartStore } from "@/store/cart";
 import { useAuth } from "@/hooks/useAuth";
 import { useCreateOrder, useInitiatePayment } from "@/hooks/useOrders";
+import { api } from "@/lib/api";
 import { getErrorMessage } from "@/lib/utils";
+
+/** Shape returned by ``POST /api/customer/coupons/validate/`` (after unwrapping
+ * the project's `api_response` envelope which exposes ``{success, message, data}``).
+ *
+ * The ``data`` payload is `{coupon: Coupon, discount: number, final_total: number}`.
+ */
+interface CouponValidateData {
+  coupon: {
+    code: string;
+    discount_type: "PERCENT" | "FIXED";
+    value: number;
+  };
+  discount: number;
+  final_total: number;
+}
+
+interface AppliedCoupon {
+  code: string;
+  discount_type: "PERCENT" | "FIXED";
+  value: number;
+  discount_amount: number;
+  new_total: number;
+  message: string;
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -25,6 +50,13 @@ export default function CheckoutPage() {
   const isBusy = createMutation.isPending || paymentMutation.isPending;
   const [address, setAddress] = useState("");
   const [notes, setNotes] = useState("");
+
+  // Coupon state: code typed in the field, applied code (post-validation),
+  // last validated discount figure, and busy flag for the Apply button.
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isAuthenticated) void cart.fetch();
@@ -59,13 +91,91 @@ export default function CheckoutPage() {
     );
   }
 
+  const cartTotal =
+    typeof cart.cart?.total_price === "number"
+      ? cart.cart.total_price
+      : Number(cart.cart?.total_price ?? 0) ||
+        (cart.cart?.items.reduce(
+          (sum, item) => sum + Number(item.product?.price ?? 0) * item.quantity,
+          0,
+        ) ?? 0);
+
+  const onApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) {
+      setCouponError("Enter a coupon code first.");
+      return;
+    }
+    setCouponBusy(true);
+    setCouponError(null);
+    try {
+      // Backend serializer reads ``order_total`` (DRF convention). Sending
+      // ``cart_total`` would silently default to 0 and the discount would be 0.
+      const resp = await api.post<{ success: boolean; message: string; data: CouponValidateData }>(
+        "/customer/coupons/validate/",
+        { code, order_total: cartTotal },
+      );
+      const envelope = resp.data;
+      if (!envelope?.success || !envelope.data) {
+        setCouponError(envelope?.message ?? "This coupon cannot be applied.");
+        setAppliedCoupon(null);
+        return;
+      }
+      const { coupon, discount, final_total } = envelope.data;
+      const applied: AppliedCoupon = {
+        code: coupon.code,
+        discount_type: coupon.discount_type,
+        value: coupon.value,
+        discount_amount: discount,
+        new_total: final_total,
+        message: envelope.message,
+      };
+      setAppliedCoupon(applied);
+      toast.success(
+        applied.discount_type === "PERCENT"
+          ? `${applied.value}% off applied`
+          : `৳${applied.discount_amount} off applied`,
+      );
+    } catch (err) {
+      // On 4xx the api envelope carries `message` inside the response body
+      // rather than the thrown error — pull it out if axios didn't already.
+      const errAny = err as { response?: { data?: { message?: string } } };
+      setCouponError(
+        errAny?.response?.data?.message ?? getErrorMessage(err),
+      );
+      setAppliedCoupon(null);
+    } finally {
+      setCouponBusy(false);
+    }
+  };
+
+  const onRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError(null);
+  };
+
   const onPlaceOrder = async () => {
     if (!address.trim()) {
       toast.error("Please enter a delivery address.");
       return;
     }
     try {
-      const order = await createMutation.mutateAsync({ address, notes });
+      // Only forward `coupon_code` if we have a successfully-applied code.
+      // Server-side validation re-runs against the canonical Coupon model,
+      // so the discount is recomputed even if the client cache diverges.
+      const payload: { address: string; notes: string; coupon_code?: string } = {
+        address,
+        notes,
+      };
+      if (appliedCoupon?.code) {
+        payload.coupon_code = appliedCoupon.code;
+      }
+      const order = await createMutation.mutateAsync(payload);
+      if (!order?.id) {
+        toast.error("Order creation returned no id.");
+        return;
+      }
       const res = await paymentMutation.mutateAsync(order.id);
       if (res.gateway_url) {
         window.location.href = res.gateway_url;
@@ -141,6 +251,69 @@ export default function CheckoutPage() {
 
         <div className="lg:sticky lg:top-24 lg:self-start">
           <CartSummary cart={cart.cart} />
+
+          {/* Coupon card sits between the cart summary and the Pay button so
+              the applied discount is visible in the same column as the total. */}
+          <Card className="mt-4 p-4 sm:p-5">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-ink-500" />
+              <h3 className="text-sm font-semibold">Have a coupon?</h3>
+            </div>
+            {appliedCoupon ? (
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm">
+                <div>
+                  <div className="font-semibold text-emerald-900">
+                    {appliedCoupon.code}
+                  </div>
+                  <div className="text-xs text-emerald-700">
+                    {appliedCoupon.discount_type === "PERCENT"
+                      ? `${appliedCoupon.value}% off`
+                      : `৳${appliedCoupon.discount_amount} off`}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Remove coupon"
+                  onClick={onRemoveCoupon}
+                  className="grid h-7 w-7 place-items-center rounded-full text-emerald-700 hover:bg-emerald-100"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3 flex gap-2">
+                <Input
+                  id="coupon"
+                  value={couponInput}
+                  onChange={(e) => {
+                    setCouponInput(e.target.value.toUpperCase());
+                    if (couponError) setCouponError(null);
+                  }}
+                  placeholder="SUMMER20"
+                  className="flex-1 uppercase"
+                  aria-invalid={couponError ? true : undefined}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  loading={couponBusy}
+                  onClick={onApplyCoupon}
+                  disabled={!couponInput.trim()}
+                >
+                  Apply
+                </Button>
+              </div>
+            )}
+            {couponError && !appliedCoupon && (
+              <p className="mt-2 text-xs text-rose-600">{couponError}</p>
+            )}
+            {appliedCoupon?.message && (
+              <p className="mt-2 text-xs text-emerald-700">
+                {appliedCoupon.message}
+              </p>
+            )}
+          </Card>
+
           <Button
             size="lg"
             className="mt-4 w-full"

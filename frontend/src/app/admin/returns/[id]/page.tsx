@@ -238,7 +238,7 @@ export default function ReturnDetailPage() {
     return (
       <ErrorState
         title="Couldn't load this return"
-        message={error || "Return not found."}
+        description={error || "Return not found."}
         onRetry={() => void load()}
       />
     );

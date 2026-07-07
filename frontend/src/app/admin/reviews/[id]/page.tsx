@@ -200,7 +200,7 @@ export default function ReviewDetailPage({
   if (loading) {
     return (
       <div className="p-6">
-        <LoadingState message="Loading review…" />
+        <LoadingState label="Loading review…" />
       </div>
     );
   }
@@ -319,7 +319,7 @@ export default function ReviewDetailPage({
                 </p>
               )}
               <p className="text-[11px] text-muted-foreground">
-                User ID: {review.user}
+                User ID: {typeof review.user === "object" && review.user ? (review.user as any).id : review.user}
               </p>
             </div>
           </div>

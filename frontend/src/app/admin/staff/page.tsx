@@ -64,7 +64,14 @@ export default function StaffPage() {
             icon={Shield}
             title="No staff members yet"
             description="Invite administrators from the Users page to populate your staff roster."
-            action={{ label: "Go to Users", href: "/admin/users" }}
+            action={
+            <Link
+              href="/admin/users"
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+            >
+              Go to Users
+            </Link>
+          }
           />
         </div>
       ) : (

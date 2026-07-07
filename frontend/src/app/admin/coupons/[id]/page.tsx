@@ -15,6 +15,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { apiDelete, apiGet, apiPatch } from "@/lib/api";
+import type { Paginated } from "@/types";
 import { toast } from "@/components/admin/feedback/toast-store";
 import { useConfirm } from "@/components/admin/feedback/confirm-dialog";
 import { usePermissionState } from "@/components/admin/layout/role-guard";
@@ -132,21 +133,17 @@ export default function CouponDetailPage() {
   const loadRefs = useCallback(async () => {
     try {
       const [pc, cc] = await Promise.all([
-        apiGet("/product/categories/", { params: { page_size: 200 } }),
-        apiGet("/product/products/", { params: { page_size: 200 } }),
+        apiGet<Paginated<any>>("/product/categories/", { params: { page_size: 200 } }),
+        apiGet<Paginated<any>>("/product/products/", { params: { page_size: 200 } }),
       ]);
       const catsRaw: any[] = Array.isArray(pc?.results)
         ? pc.results
-        : Array.isArray(pc?.data)
-          ? pc.data
-          : Array.isArray(pc)
+        : Array.isArray(pc)
             ? pc
             : [];
       const prodsRaw: any[] = Array.isArray(cc?.results)
         ? cc.results
-        : Array.isArray(cc?.data)
-          ? cc.data
-          : Array.isArray(cc)
+        : Array.isArray(cc)
             ? cc
             : [];
       setCategories(catsRaw.map((c) => ({ id: c.id, name: c.name })));
@@ -287,7 +284,7 @@ export default function CouponDetailPage() {
     return (
       <ErrorState
         title="Couldn't load this coupon"
-        message={error || "Coupon not found."}
+        description={error || "Coupon not found."}
         onRetry={() => void load()}
       />
     );

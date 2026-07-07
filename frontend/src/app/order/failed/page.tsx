@@ -123,7 +123,7 @@ function FailedInner() {
               />
               <Tile
                 label="Status"
-                value={order.status === "NOT PAID" ? "Awaiting payment" : order.status}
+                value="Awaiting payment"
               />
             </div>
           ) : (

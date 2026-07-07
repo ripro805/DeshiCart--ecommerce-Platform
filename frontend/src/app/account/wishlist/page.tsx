@@ -377,7 +377,7 @@ export default function WishlistPage() {
                             <div className="flex items-center gap-2 text-xs text-ink-500">
                               <StarRating
                                 value={Number(product.average_rating)}
-                                size="sm"
+                                size={14}
                               />
                               <span>
                                 {Number(product.average_rating).toFixed(1)}

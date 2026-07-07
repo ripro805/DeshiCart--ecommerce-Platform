@@ -94,7 +94,7 @@ type AskOpts = {
   tone?: Tone;
   confirmLabel?: string;
   cancelLabel?: string;
-  onConfirm: () => void | Promise<void>;
+  onConfirm?: () => void | Promise<void>;
 };
 
 type DialogState = {
@@ -104,7 +104,7 @@ type DialogState = {
   tone: Tone;
   confirmLabel?: string;
   cancelLabel?: string;
-  onConfirm: () => void | Promise<void>;
+  onConfirm?: () => void | Promise<void>;
 };
 
 /**
@@ -149,7 +149,9 @@ export function useConfirm() {
   const handleConfirm = useCallback(async () => {
     setLoading(true);
     try {
-      await state.onConfirm();
+      if (state.onConfirm) {
+        await state.onConfirm();
+      }
       if (resolverRef.current) {
         resolverRef.current(true);
         resolverRef.current = null;

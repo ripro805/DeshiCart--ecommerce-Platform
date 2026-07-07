@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import type { Paginated } from "@/types";
 import {
   AlertCircle,
   AlertTriangle,
@@ -188,10 +189,10 @@ export default function ProductDetailPage() {
   const loadMeta = useCallback(async () => {
     try {
       const [catRes, brandRes, tagRes, reviewRes] = await Promise.all([
-        apiGet(`/categories/?page_size=200`).catch(() => []),
-        apiGet(`/admin/brands/?page_size=200`).catch(() => []),
-        apiGet(`/admin/tags/?page_size=200`).catch(() => []),
-        apiGet(
+        apiGet<Paginated<any>>(`/categories/?page_size=200`).catch(() => []),
+        apiGet<Paginated<any>>(`/admin/brands/?page_size=200`).catch(() => []),
+        apiGet<Paginated<any>>(`/admin/tags/?page_size=200`).catch(() => []),
+        apiGet<Paginated<any>>(
           `/admin/reviews/?product=${productId}&page_size=10`,
         ).catch(() => []),
       ]);
@@ -458,7 +459,7 @@ export default function ProductDetailPage() {
     return (
       <div className="space-y-4">
         <ErrorState
-          message={loadError || "Product not found"}
+          description={loadError || "Product not found"}
           onRetry={() => void loadProduct()}
         />
         <Link

@@ -24,7 +24,7 @@ export default function ShippingPage() {
   const [items, setItems] = useState<Method[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const confirm = useConfirm();
+  const { ask, dialog: confirmDialog } = useConfirm();
 
   async function load() {
     setLoading(true);
@@ -45,7 +45,7 @@ export default function ShippingPage() {
   }, [allowed]);
 
   async function del(m: Method) {
-    const ok = await confirm({
+    const ok = await ask({
       title: "Delete shipping method?",
       description: `"${m.name}" will be removed. Existing orders referencing it will keep their snapshot.`,
       confirmLabel: "Delete",
@@ -91,7 +91,15 @@ export default function ShippingPage() {
             icon={Truck}
             title="No shipping methods yet"
             description="Add your first method to start offering delivery options at checkout."
-            action={{ label: "Refresh", onClick: load }}
+            action={
+              <button
+                type="button"
+                onClick={() => void load()}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+              >
+                Refresh
+              </button>
+            }
           />
         </div>
       ) : (
@@ -163,6 +171,7 @@ export default function ShippingPage() {
           </div>
         </section>
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -208,6 +208,13 @@ class InitiatePaymentSerializer(serializers.Serializer):
     notes = serializers.CharField(
         required=False, allow_blank=True, allow_null=True
     )
+    # Optional coupon code to apply at order creation. Validated by
+    # `OrderService.create_order` against the Coupons app; invalid / expired
+    # / below-minimum codes raise a `ValidationError` with a user-friendly
+    # message that the checkout page surfaces as a toast.
+    coupon_code = serializers.CharField(
+        required=False, allow_blank=True, allow_null=True, max_length=40
+    )
 
     def validate_order_id(self, value):
         user = self.context["request"].user

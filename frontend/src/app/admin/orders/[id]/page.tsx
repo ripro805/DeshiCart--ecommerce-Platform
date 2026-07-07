@@ -141,7 +141,8 @@ function formatDateTime(value?: string | null): string {
   }
 }
 
-function getCustomerName(order: Order): string {
+function getCustomerName(order: Order | null): string {
+  if (!order) return "Guest customer";
   const u: any = order.user;
   if (u && typeof u === "object") {
     return u.name || u.full_name || u.email || `Customer #${u.id ?? "?"}`;
@@ -151,7 +152,8 @@ function getCustomerName(order: Order): string {
   return "Guest customer";
 }
 
-function getCustomerEmail(order: Order): string {
+function getCustomerEmail(order: Order | null): string {
+  if (!order) return "";
   const u: any = order.user;
   if (u && typeof u === "object") return u.email || "";
   return order.user_email || "";
@@ -452,12 +454,12 @@ export default function AdminOrderDetailPage({
             <LoadingState label="Loading order…" />
           ) : loadError ? (
             <ErrorState
-              message={loadError}
+              description={loadError}
               onRetry={() => void load()}
             />
           ) : !order ? (
             <EmptyState
-              icon={<Receipt className="h-6 w-6" />}
+              icon={Receipt}
               title="Order not found"
               description="The order you're looking for doesn't exist or has been removed."
               action={
@@ -487,7 +489,7 @@ export default function AdminOrderDetailPage({
                 </header>
                 {items.length === 0 ? (
                   <EmptyState
-                    icon={<Package className="h-6 w-6" />}
+                    icon={Package}
                     title="No items"
                     description="This order has no items attached."
                   />

@@ -207,7 +207,7 @@ export default function CmsPageDetail() {
     return (
       <ErrorState
         title="Couldn't load this page"
-        message={error || "Page not found."}
+        description={error || "Page not found."}
         onRetry={() => void load()}
       />
     );

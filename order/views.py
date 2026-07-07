@@ -201,6 +201,7 @@ class PaymentViewSet(GenericViewSet):
                     shipping_address=data.get("shipping_address") or "",
                     notes=data.get("notes") or "",
                     address_id=data.get("address_id"),
+                    coupon_code=data.get("coupon_code") or "",
                 )
             except PermissionDenied:
                 raise

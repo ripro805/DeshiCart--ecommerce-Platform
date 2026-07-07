@@ -322,13 +322,12 @@ export default function AdminOrdersPage() {
           <LoadingState label="Loading orders…" />
         ) : error ? (
           <ErrorState
-            message={error}
-            onRetry={load}
-            className="rounded-none border-0"
+            description={error}
+            onRetry={() => void load()}
           />
         ) : filtered.length === 0 ? (
           <EmptyState
-            icon={<ShoppingBag className="h-10 w-10" />}
+            icon={ShoppingBag}
             title={
               debounced || statusFilter
                 ? "No orders match your filters."
@@ -339,12 +338,21 @@ export default function AdminOrdersPage() {
                 ? "Try clearing the filters or searching a different word."
                 : "Orders will appear here once customers check out."
             }
-            actionLabel={debounced || statusFilter ? "Clear filters" : undefined}
-            onAction={() => {
-              setSearch("");
-              setStatusFilter("");
-              setPage(1);
-            }}
+            action={
+              debounced || statusFilter ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setStatusFilter("");
+                    setPage(1);
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+                >
+                  Clear filters
+                </button>
+              ) : undefined
+            }
           />
         ) : (
           <div className="overflow-x-auto">

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Download, FileText } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { toast } from "@/components/admin/feedback/toast-store";
-import { usePermission } from "@/components/admin/layout/role-guard";
+import { usePermissionState } from "@/components/admin/layout/role-guard";
 import { ErrorState, LoadingState } from "@/components/admin/feedback/states";
 import { formatPrice } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ const REPORTS: ReportCard[] = [
 ];
 
 export default function ReportsPage() {
-  const { allowed, loading: permLoading } = usePermission("manage_reports");
+  const { allowed, loading: permLoading } = usePermissionState("manage_reports");
   const [stats, setStats] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState<string | null>(null);
@@ -51,7 +51,7 @@ export default function ReportsPage() {
       const res: any = await apiGet(r.endpoint);
       const data: any[] = Array.isArray(res) ? res : res?.results || [];
       if (!data.length) {
-        toast.warning("No data", `${r.title} returned an empty export.`);
+        toast.warn("No data", `${r.title} returned an empty export.`);
         return;
       }
       const headers = Object.keys(data[0]);
@@ -77,7 +77,7 @@ export default function ReportsPage() {
   }
 
   if (permLoading) return <LoadingState label="Checking permissions…" />;
-  if (!allowed) return <ErrorState title="Access denied" message="You need manage_reports to view this page." />;
+  if (!allowed) return <ErrorState title="Access denied" description="You need manage_reports to view this page." />;
   if (statsLoading) return <LoadingState label="Loading reports…" />;
 
   return (
@@ -88,7 +88,7 @@ export default function ReportsPage() {
       </header>
 
       {statsError && (
-        <ErrorState title="Couldn't load overview" message={statsError} />
+        <ErrorState title="Couldn't load overview" description={statsError} />
       )}
 
       {stats && (

@@ -551,12 +551,12 @@ export default function AdminProductsPage() {
           <LoadingState label="Loading products…" />
         ) : loadError ? (
           <ErrorState
-            message={loadError}
+            description={loadError}
             onRetry={() => void load()}
           />
         ) : filteredAndSorted.length === 0 ? (
           <EmptyState
-            icon={<PackageIcon className="h-10 w-10" />}
+            icon={PackageIcon}
             title={filtersActive ? "No products match your filters" : "No products yet"}
             description={
               filtersActive

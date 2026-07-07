@@ -125,7 +125,7 @@ function relativeTime(value: string) {
 
 export default function NotificationsPage() {
   const { allowed, loading: permLoading } = usePermissionState("manage_notifications");
-  const confirm = useConfirm();
+  const { ask, dialog: confirmDialog } = useConfirm();
 
   const [items, setItems] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,9 +175,9 @@ export default function NotificationsPage() {
     try {
       await apiPost(`/notifications/notifications/${n.id}/mark_${isRead ? "unread" : "read"}/`);
       setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: !isRead } : x)));
-      toast({ type: "success", message: isRead ? "Marked as unread" : "Marked as read" });
+      toast.success(isRead ? "Marked as unread" : "Marked as read");
     } catch (e: any) {
-      toast({ type: "error", message: e?.response?.data?.message || e?.message || "Update failed" });
+      toast.error(e?.response?.data?.message || e?.message || "Update failed");
     } finally {
       setBusyId(null);
     }
@@ -188,29 +188,29 @@ export default function NotificationsPage() {
     try {
       await apiPost(`/notifications/notifications/mark_all_read/`);
       setItems((prev) => prev.map((x) => ({ ...x, is_read: true })));
-      toast({ type: "success", message: "All notifications marked as read" });
+      toast.success("All notifications marked as read");
     } catch (e: any) {
-      toast({ type: "error", message: e?.response?.data?.message || e?.message || "Update failed" });
+      toast.error(e?.response?.data?.message || e?.message || "Update failed");
     } finally {
       setBusyId(null);
     }
   };
 
   const removeOne = async (n: Notification) => {
-    const ok = await confirm({
+    const ok = await ask({
       title: "Delete notification?",
-      message: `"${n.title}" will be permanently removed.`,
+      description: `"${n.title}" will be permanently removed.`,
       confirmLabel: "Delete",
-      destructive: true,
+      tone: "danger",
     });
     if (!ok) return;
     setBusyId(n.id);
     try {
       await apiDelete(`/notifications/notifications/${n.id}/`);
       setItems((prev) => prev.filter((x) => x.id !== n.id));
-      toast({ type: "success", message: "Notification deleted" });
+      toast.success("Notification deleted");
     } catch (e: any) {
-      toast({ type: "error", message: e?.response?.data?.message || e?.message || "Delete failed" });
+      toast.error(e?.response?.data?.message || e?.message || "Delete failed");
     } finally {
       setBusyId(null);
     }
@@ -218,7 +218,7 @@ export default function NotificationsPage() {
 
   const sendCompose = async () => {
     if (!composeTitle.trim()) {
-      toast({ type: "error", message: "Title is required" });
+      toast.error("Title is required");
       return;
     }
     setComposeSending(true);
@@ -229,7 +229,7 @@ export default function NotificationsPage() {
         body: composeBody.trim(),
         link: composeLink.trim(),
       });
-      toast({ type: "success", message: "Notification broadcast" });
+      toast.success("Notification broadcast");
       setComposeTitle("");
       setComposeBody("");
       setComposeLink("");
@@ -237,7 +237,7 @@ export default function NotificationsPage() {
       setComposeOpen(false);
       await load();
     } catch (e: any) {
-      toast({ type: "error", message: e?.response?.data?.message || e?.message || "Broadcast failed" });
+      toast.error(e?.response?.data?.message || e?.message || "Broadcast failed");
     } finally {
       setComposeSending(false);
     }
@@ -257,8 +257,8 @@ export default function NotificationsPage() {
     return (
       <ErrorState
         title="Couldn't load notifications"
-        message={loadError}
-        action={{ label: "Retry", onClick: load }}
+        description={loadError}
+        onRetry={() => void load()}
       />
     );
   }
@@ -502,6 +502,7 @@ export default function NotificationsPage() {
           </ul>
         </section>
       )}
+      {confirmDialog}
     </div>
   );
 }

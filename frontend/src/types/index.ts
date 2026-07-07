@@ -81,6 +81,8 @@ export interface AdminReview extends Review {
   product_name: string;
   product_sku?: string;
   product_image_url?: string | null;
+  // Some admin responses include a denormalized reviewer display name.
+  name?: string;
 }
 
 export interface Product {
@@ -92,6 +94,16 @@ export interface Product {
   category: Category;
   image?: string | null;
   image_url?: string | null;
+  // Optional / model-specific fields commonly returned by DRF serializers
+  // or admin views. Backend may include them for richer UI affordances.
+  compare_price?: string | number | null;
+  stock_quantity?: number;
+  in_stock?: boolean;
+  low_stock_threshold?: number;
+  image_external_url?: string | null;
+  sku?: string;
+  slug?: string;
+  status?: string;
   reviews?: Review[];
   average_rating?: number;
   review_count?: number;
