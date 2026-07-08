@@ -203,10 +203,7 @@ class BrandSerializer(serializers.ModelSerializer):
             "logo_url",
             "description",
             "is_active",
-            "created_at",
-            "updated_at",
         )
-        read_only_fields = ("created_at", "updated_at")
 
     def get_logo_url(self, obj):
         if not obj.logo:

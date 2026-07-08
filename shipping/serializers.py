@@ -28,5 +28,14 @@ class TrackingUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TrackingUpdate
-        fields = ("id", "order", "order_id", "carrier", "tracking_number", "status", "shipped_at", "delivered_at", "history")
-        read_only_fields = ("id", "order_id", "shipped_at")
+        fields = (
+            "id",
+            "order",
+            "order_id",
+            "status",
+            "location",
+            "note",
+            "created_by",
+            "created_at",
+        )
+        read_only_fields = ("id", "order_id", "created_at")
