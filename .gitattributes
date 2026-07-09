@@ -1,0 +1,17 @@
+# Force LF for all text files so Windows editors / shells don't corrupt them.
+# Requirement: Render runs build.sh; CRLF shebang would break execution permission.
+*           text=auto eol=lf
+*.sh        text eol=lf
+*.py        text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.txt       text eol=lf
+*.css       text eol=lf
+*.js        text eol=lf
+*.ts        text eol=lf
+*.tsx       text eol=lf
+*.jsx       text eol=lf
+*.html      text eol=lf
+requirements.txt  text eol=lf
