@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from django.db.models import Avg
 from .models import Product, Category, SubCategory, Brand, Attribute, Tag, Review, StockLog
-from decimal import Decimal
+from storesettings.models import StoreSettings
+from decimal import Decimal, ROUND_HALF_UP
 
 
 # class ProductSerializer(serializers.Serializer):
@@ -53,7 +54,16 @@ class ProductSerializer(serializers.ModelSerializer):
         ]
 
     def calculate_price_with_tax(self, product):
-        return product.price * Decimal('1.1')  # Assuming 10% tax
+        """Apply store-wide tax from StoreSettings, rounded HALF_UP to 2dp."""
+        try:
+            settings = StoreSettings.objects.first()
+            rate_pct = settings.tax_rate if settings is not None else Decimal("0")
+        except Exception:
+            rate_pct = Decimal("0")
+        multiplier = Decimal("1") + (rate_pct / Decimal("100"))
+        return (product.price * multiplier).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
 
     def get_image_url(self, product):
         request = self.context.get('request')

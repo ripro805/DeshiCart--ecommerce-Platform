@@ -6,17 +6,27 @@ import os
 from pathlib import Path
 from datetime import timedelta
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+import dj_database_url
+from dotenv import load_dotenv
 
-SECRET_KEY = 'django-insecure-_-sw+995f4t48rwyxucty93nmor3r&u0(secce*$8+36=xcv3-'
-DEBUG = True
-# Local dev + tests. In production these MUST come from environment.
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / '.env')
+
+# Sec 6: production-safe DEBUG toggle. Default off; opt-in for local dev via DJANGO_DEBUG=true.
+_DEBUG_RAW = os.environ.get('DJANGO_DEBUG', 'False').strip().lower()
+DEBUG = _DEBUG_RAW in ('true', '1', 'yes', 'on')
+# Sec 5: SECRET_KEY must come from environment in production.
+# Falls back to the dev-only insecure key for local SQLite work, but
+# refuses to start in production with DEBUG=False if it's still the dev key.
+_DEV_SECRET_KEY = 'django-insecure-_-sw+995f4t48rwyxucty93nmor3r&u0(secce*$8+36=xcv3-'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or _DEV_SECRET_KEY
+if not DEBUG and SECRET_KEY == _DEV_SECRET_KEY:
+    raise RuntimeError("DJANGO_SECRET_KEY env var is required when DEBUG=False")
+# Sec 5: ALLOWED_HOSTS must come from environment in production.
+_ALLOWED_HOSTS_DEFAULT = 'localhost,127.0.0.1,[::1],testserver,0.0.0.0'
 ALLOWED_HOSTS = [
-    "localhost",
-    "127.0.0.1",
-    "[::1]",
-    "testserver",
-    "0.0.0.0",
+    h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', _ALLOWED_HOSTS_DEFAULT).split(',')
+    if h.strip()
 ]
 AUTH_USER_MODEL = 'users.User'
 
@@ -87,12 +97,27 @@ WSGI_APPLICATION = 'deshicart.wsgi.application'
 
 INTERNAL_IPS = ['127.0.0.1']
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database routing.
+# Default: SQLite (local dev, fast iteration).
+# To switch to Neon PostgreSQL set USE_NEON=True in .env (DATABASE_URL required).
+if os.environ.get('USE_NEON', 'False').lower() in ('true', '1', 'yes'):
+    _db_url = os.environ.get('DATABASE_URL')
+    if not _db_url:
+        raise RuntimeError('USE_NEON=True but DATABASE_URL is not set in .env')
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=_db_url,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
