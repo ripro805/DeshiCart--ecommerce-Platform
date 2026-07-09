@@ -8,12 +8,12 @@ social-auth-app-django==5.4.3
 social-auth-core==4.6.0
 dj-database-url==3.1.2
 python-dotenv==1.0.1
-psycopg[binary]==3.2.6
+psycopg[binary]>=3.2.6
 gunicorn==23.0.0
 whitenoise==6.8.2
 Pillow==11.1.0
 sslcommerz-python==0.0.7
-requests==2.32.3
+requests==2.22.0
 drf-spectacular==0.28.0
 django-debug-toolbar==5.0.0
 channels==4.1.0
