@@ -1,3 +1,4 @@
+from api.views import health_check
 """Top-level API URL configuration."""
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
@@ -16,6 +17,7 @@ me_dashboard = MeViewSet.as_view({"get": "dashboard"})
 
 urlpatterns = [
     path("", include("product.product_urls")),
+    path("health/", health_check, name="api-health"),
     path("categories/", include("product.categories_urls")),
     path("", include("order.urls")),
     path("auth/", include("djoser.urls")),
