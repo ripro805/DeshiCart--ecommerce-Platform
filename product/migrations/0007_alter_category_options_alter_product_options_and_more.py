@@ -60,9 +60,14 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterModelOptions(name="category", options={"ordering": ["name"], "verbose_name_plural": "Categories"}),
         migrations.AlterModelOptions(name="product", options={"ordering": ["-created_at"]}),
-        # Category.image already exists in DB from earlier partial apply — use SeparateDatabaseAndState to update state only
+        # Category.image: add the column in the DB and update state to match
         migrations.SeparateDatabaseAndState(
-            database_operations=[],
+            database_operations=[
+                migrations.RunSQL(
+                    sql="ALTER TABLE product_category ADD COLUMN image varchar(500) NULL;",
+                    reverse_sql="ALTER TABLE product_category DROP COLUMN image;",
+                ),
+            ],
             state_operations=[
                 migrations.AddField(
                     model_name="category",
