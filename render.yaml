@@ -42,6 +42,32 @@ services:
         value: "false"
       - key: SSLCOMMERZ_BACKEND_URL
         value: "https://deshicart-api.onrender.com"
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.smtp.EmailBackend
+      - key: EMAIL_HOST
+        value: smtp.gmail.com
+      - key: FRONTEND_DOMAIN
+        value: deshicart-web.onrender.com
+      - key: FRONTEND_PROTOCOL
+        value: https
+      - key: SSLCOMMERZ_SUCCESS_URL
+        value: https://deshicart-web.onrender.com/checkout/success
+      - key: SSLCOMMERZ_CANCEL_URL
+        value: https://deshicart-web.onrender.com/checkout/cancel
+      - key: SSLCOMMERZ_FAIL_URL
+        value: https://deshicart-web.onrender.com/checkout/fail
+      - key: SSLCOMMERZ_IPN_URL
+        value: https://deshicart-api.onrender.com/api/orders/sslcommerz/ipn/
+      - key: EMAIL_HOST_USER
+        sync: false
+      - key: EMAIL_HOST_PASSWORD
+        sync: false
+      - key: EMAIL_PORT
+        value: "587"
+      - key: EMAIL_USE_SSL
+        value: "False"
+      - key: EMAIL_USE_TLS
+        value: "True"
       - key: PYTHONUNBUFFERED
         value: "true"
       - key: WEB_CONCURRENCY
