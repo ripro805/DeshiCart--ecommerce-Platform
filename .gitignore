@@ -34,7 +34,9 @@ local_settings.py
 
 # Logs (broad)
 /*.log
+/*.err
 /frontend/*.log
+/frontend/*.err
 /_*.log
 /_*.err
 /_smoke_out.txt
@@ -69,6 +71,7 @@ local_settings.py
 /frontend/kill-port-3000.ps1
 /frontend/_next.log
 /frontend/_next.log.snapshot
+/frontend/_next_live.err
 /frontend/page.b64
 
 # Operational log (move out of repo later if desired)
