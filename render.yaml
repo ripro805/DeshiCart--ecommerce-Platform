@@ -27,7 +27,7 @@ services:
       - key: DJANGO_SECRET_KEY
         generateValue: true   # Render generates and stores this; reference via ${DJANGO_SECRET_KEY}
       - key: DJANGO_ALLOWED_HOSTS
-        value: "deshicart-api.onrender.com"
+        value: "deshicart-ecommerce-platform.onrender.com"
       - key: USE_NEON
         value: "false"
       - key: DATABASE_URL
@@ -41,23 +41,23 @@ services:
       - key: SSLCOMMERZ_IS_SANDBOX
         value: "false"
       - key: SSLCOMMERZ_BACKEND_URL
-        value: "https://deshicart-api.onrender.com"
+        value: "https://deshicart-ecommerce-platform.onrender.com"
       - key: EMAIL_BACKEND
         value: django.core.mail.backends.smtp.EmailBackend
       - key: EMAIL_HOST
         value: smtp.gmail.com
       - key: FRONTEND_DOMAIN
-        value: deshicart-web.onrender.com
+        value: deshicart-ecommerce-platform.onrender.com
       - key: FRONTEND_PROTOCOL
         value: https
       - key: SSLCOMMERZ_SUCCESS_URL
-        value: https://deshicart-web.onrender.com/checkout/success
+        value: https://deshicart-ecommerce-platform.onrender.com/checkout/success
       - key: SSLCOMMERZ_CANCEL_URL
-        value: https://deshicart-web.onrender.com/checkout/cancel
+        value: https://deshicart-ecommerce-platform.onrender.com/checkout/cancel
       - key: SSLCOMMERZ_FAIL_URL
-        value: https://deshicart-web.onrender.com/checkout/fail
+        value: https://deshicart-ecommerce-platform.onrender.com/checkout/fail
       - key: SSLCOMMERZ_IPN_URL
-        value: https://deshicart-api.onrender.com/api/orders/sslcommerz/ipn/
+        value: https://deshicart-ecommerce-platform.onrender.com/api/orders/sslcommerz/ipn/
       - key: EMAIL_HOST_USER
         sync: false
       - key: EMAIL_HOST_PASSWORD
@@ -80,10 +80,10 @@ services:
     region: oregon
     rootDir: frontend
     buildCommand: "npm ci && npm run build"
-    startCommand: "npm run start"
+    startCommand: "npm run start -- -p $PORT -H 0.0.0.0"
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        value: "https://deshicart-api.onrender.com"
+        value: ""
       - key: NEXT_PUBLIC_GOOGLE_OAUTH_URL
         value: ""
       - key: NODE_VERSION
