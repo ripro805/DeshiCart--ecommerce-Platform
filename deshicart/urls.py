@@ -19,9 +19,10 @@ from django.contrib import admin
 from django.urls import include, path
 
 from django.conf import settings
-from .views import api_root_view
+from .views import api_root_view, favicon_view
 
 urlpatterns = [
+    path("favicon.ico", favicon_view, name="favicon"),
     path("admin/", admin.site.urls),
     path('', api_root_view, name='api-root'),
     # path('api-auth/', include('rest_framework.urls')),  # Enables DRF session login/logout/profile
