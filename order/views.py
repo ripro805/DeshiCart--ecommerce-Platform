@@ -69,6 +69,7 @@ class CartItemViewSet(ModelViewSet):
     """CRUD against items inside a cart owned by ``request.user``."""
 
     http_method_names = ["get", "post", "patch", "delete"]
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -82,9 +83,14 @@ class CartItemViewSet(ModelViewSet):
 
     def get_queryset(self):
         # Scope to the caller's own cart — never let one user touch another's cart.
+        # Guard against ``AnonymousUser`` leaking in if a permission override ever
+        # opens this endpoint up to anonymous traffic.
+        user = self.request.user
+        if not getattr(user, "is_authenticated", False):
+            return CartItem.objects.none()
         return CartItem.objects.select_related("product").filter(
             cart_id=self.kwargs["cart_pk"],
-            cart__user=self.request.user,
+            cart__user=user,
         )
 
 
