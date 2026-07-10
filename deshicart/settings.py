@@ -205,11 +205,12 @@ SSLCOMMERZ = {
     'CANCEL_URL':  f'{_BACKEND_URL}/api/payment/cancel/',
     'IPN_URL':     f'{_BACKEND_URL}/api/payment/ipn/',
     'BACKEND_URL': _BACKEND_URL,
-    'FRONTEND_BASE_URL': 'http://localhost:3000',
+    'FRONTEND_BASE_URL': os.environ.get('FRONTEND_URL', 'http://localhost:3000'),
 }
 
+_FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:3000').rstrip('/')
 FRONTEND_URLS = {
-    'SUCCESS': 'http://localhost:3000/order/success',
-    'FAIL': 'http://localhost:3000/order/failed',
-    'CANCEL': 'http://localhost:3000/order/cancelled',
+    'SUCCESS': f'{_FRONTEND_URL}/order/success',
+    'FAIL': f'{_FRONTEND_URL}/order/failed',
+    'CANCEL': f'{_FRONTEND_URL}/order/cancelled',
 }
