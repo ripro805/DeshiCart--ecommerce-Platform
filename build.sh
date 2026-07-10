@@ -14,10 +14,12 @@ python manage.py collectstatic --noinput
 echo "---- running database migrations ----"
 python manage.py migrate --noinput
 
-# NOTE: products/categories seed is performed by an out-of-band script
-# (_loader_v3.py against $DATABASE_URL) because the in-repo fixture
-# (fixtures/product_data.json) does not include required fields like
-# Product.slug / Product.sku and would otherwise insert broken rows.
-# Categories count probe (informational only):
-COUNT=$( { python manage.py shell -c "from product.models import Category; print(Category.objects.count())" 2>/dev/null || true; } | tail -n 1 | tr -d "\r\n " || true)
-echo "---- DB probe: $COUNT categories present (use _loader_v3.py to seed products) ----"
+# Idempotent seed via _loader_v3.py (uses $DATABASE_URL).
+# The loader no-ops when _split/_manifest.json and seed_data/_manifest.json are
+# both absent, so this is safe even when the dataset has not been committed.
+if [ -f "_split/_manifest.json" ] || [ -f "seed_data/_manifest.json" ]; then
+  echo "---- seeding initial dataset via _loader_v3.py ----"
+  python _loader_v3.py || echo "loader_v3 failed (continuing)"
+else
+  echo "---- no seed manifest found (skipped) ----"
+fi
