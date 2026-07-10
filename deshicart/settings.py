@@ -134,14 +134,14 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 # First-party static assets (favicon, robots.txt, etc.) live here and must be collected too.
 STATICFILES_DIRS = [BASE_DIR / 'static']
 # Use the non-manifest variant: CompressedManifestStaticFilesStorage requires a
 # perfectly consistent staticfiles.json and 500s on the first stale entry in production.
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Production-only HTTPS hardening (Render terminates TLS).
