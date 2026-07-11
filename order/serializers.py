@@ -55,6 +55,7 @@ class AddCartItemSerializer(serializers.Serializer):
             raise serializers.ValidationError("Product not found.")
         return value
 
+    @transaction.atomic
     def create(self, validated_data):
         """Create or increment a CartItem for the current cart."""
         cart_id = self.context.get("cart_id")
