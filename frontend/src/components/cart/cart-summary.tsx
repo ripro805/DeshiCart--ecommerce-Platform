@@ -6,7 +6,12 @@ import type { Cart } from "@/types";
 export function CartSummary({ cart }: { cart: Cart | null }) {
   const items = cart?.items ?? [];
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
-  const subtotal = items.reduce((s, i) => s + Number(i.product.price) * i.quantity, 0);
+  // `item.product` is a PK in the cart response, so read `line_total` directly
+  // instead of `Number(i.product.price) * i.quantity`.
+  const subtotal = items.reduce(
+    (s, i) => s + Number(i.line_total ?? 0),
+    0,
+  );
   const total = cart?.total_price ?? subtotal;
 
   return (

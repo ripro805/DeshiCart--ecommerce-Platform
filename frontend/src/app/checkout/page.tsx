@@ -96,7 +96,7 @@ export default function CheckoutPage() {
       ? cart.cart.total_price
       : Number(cart.cart?.total_price ?? 0) ||
         (cart.cart?.items.reduce(
-          (sum, item) => sum + Number(item.product?.price ?? 0) * item.quantity,
+          (sum, item) => sum + Number(item.line_total ?? 0),
           0,
         ) ?? 0);
 

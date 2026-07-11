@@ -32,9 +32,15 @@ export function CartDrawer() {
   }, [isOpen]);
 
   const totalItems = cart?.items?.reduce((s, i) => s + i.quantity, 0) ?? 0;
+  // Prefer the backend-provided `total_price`. Fall back to summing the
+  // per-item `line_total` fields the backend already returns — accessing
+  // `i.product.price` would fail because `product` is just a PK.
   const totalPrice =
     cart?.total_price ??
-    cart?.items?.reduce((s, i) => s + Number(i.product.price) * i.quantity, 0) ??
+    cart?.items?.reduce(
+      (s, i) => s + Number(i.line_total ?? 0),
+      0,
+    ) ??
     0;
 
   function goCheckout() {
@@ -106,20 +112,19 @@ export function CartDrawer() {
                   <li key={item.id} className="flex gap-3 rounded-2xl p-2 hover:bg-ink-50 dark:hover:bg-ink-900/50">
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden">
                       <ProductImage
-                        src={item.product.image_url ?? item.product.image ?? null}
-                        alt={item.product.name}
+                        src={item.product_image ?? null}
+                        alt={item.product_name ?? "Product"}
                         rounded="rounded-xl"
                       />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="truncate text-sm font-medium">{item.product.name}</h4>
-                      <p className="text-xs text-ink-500 truncate">{item.product.category?.name}</p>
-                      <Price value={item.product.price} size="sm" className="mt-1" />
+                      <h4 className="truncate text-sm font-medium">{item.product_name ?? "Product"}</h4>
+                      <Price value={item.line_total ?? 0} size="sm" className="mt-1" />
                       <div className="mt-2 flex items-center justify-between">
                         <QtyStepper
                           value={item.quantity}
                           min={1}
-                          max={item.product.stock || 99}
+                          max={99}
                           size="sm"
                           onChange={(q) => update(item.id, q)}
                         />

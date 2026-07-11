@@ -118,13 +118,22 @@ export interface Paginated<T> {
 
 export interface CartItem {
   id: number;
-  product: Product;
+  // Backend's CartItemSerializer exposes `product` as a DRF primary-key
+  // (just the integer ID) along with denormalized `product_name`,
+  // `product_image`, and `line_total` fields. The full Product object is
+  // not nested in the cart response, so keep `product` loose here.
+  product: number | Product;
   quantity: number;
   total_price?: string | number;
+  // Denormalized fields returned by `order.serializers.CartItemSerializer`.
+  product_name?: string;
+  product_image?: string | null;
+  line_total?: string | number;
 }
 
 export interface Cart {
-  id: number;
+  // Backend `Cart.id` is a UUID; allow string-or-number to match reality.
+  id: string | number;
   user?: number;
   items: CartItem[];
   total_price?: string | number;
