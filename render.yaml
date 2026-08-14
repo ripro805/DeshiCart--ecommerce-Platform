@@ -26,11 +26,11 @@ services:
         # Paste Neon connection string here in Render Dashboard -> Environment:
         # postgresql://neondb_owner:<pwd>@ep-nameless-snow-a6e31yvx-pooler.us-west-2.aws.neon.tech/neondb?sslmode=require
       - key: SSLCOMMERZ_STORE_ID
-        value: "testbox"          # SSLCommerz public sandbox store ID
+        value: "deshi6a7efb9d7aafe"
       - key: SSLCOMMERZ_STORE_PASSWD
-        value: "qwerty"           # SSLCommerz public sandbox password
+        value: "deshi6a7efb9d7aafe@ssl"
       - key: SSLCOMMERZ_IS_SANDBOX
-        value: "true"
+        value: "false"
       - key: SSLCOMMERZ_BACKEND_URL
         value: "https://deshicart-ecommerce-platform.onrender.com"
       - key: EMAIL_BACKEND
